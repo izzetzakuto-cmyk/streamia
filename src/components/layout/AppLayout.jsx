@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/messages',  icon: '💬', label: 'Messages', badge: 2 },
   { to: '/analytics', icon: '📊', label: 'Analytics' },
   { to: '/companies', icon: '🏢', label: 'Companies' },
+  { to: '/pricing',   icon: '💎', label: 'Upgrade' },
 ]
 
 export default function AppLayout() {

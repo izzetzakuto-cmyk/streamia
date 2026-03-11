@@ -13,3 +13,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
   },
 })
+
+// Keep Supabase awake — pings every 4 minutes to prevent cold starts
+// Free tier sleeps after 5 min of inactivity
+setInterval(async () => {
+  await supabase.from('profiles').select('id').limit(1)
+}, 4 * 60 * 1000)
