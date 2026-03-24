@@ -5,21 +5,23 @@ import { useAuthStore } from '@/lib/store'
 import AppLayout from '@/components/layout/AppLayout'
 import Toast     from '@/components/layout/Toast'
 
-// Lazy load all pages
-const LandingPage        = lazy(() => import('@/pages/LandingPage'))
-const LoginPage          = lazy(() => import('@/pages/LoginPage'))
-const RegisterPage       = lazy(() => import('@/pages/RegisterPage'))
-const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
-const ResetPasswordPage  = lazy(() => import('@/pages/ResetPasswordPage'))
-const FeedPage           = lazy(() => import('@/pages/FeedPage'))
-const ProfilePage        = lazy(() => import('@/pages/ProfilePage'))
-const MessagesPage       = lazy(() => import('@/pages/MessagesPage'))
-const NetworkPage        = lazy(() => import('@/pages/NetworkPage'))
-const JobsPage           = lazy(() => import('@/pages/JobsPage'))
-const OffersPage         = lazy(() => import('@/pages/OffersPage'))
-const AnalyticsPage      = lazy(() => import('@/pages/AnalyticsPage'))
-const CompaniesPage      = lazy(() => import('@/pages/CompaniesPage'))
-const PricingPage        = lazy(() => import('@/pages/PricingPage'))
+// Auth pages — load immediately, never lazy (these are entry points)
+import LoginPage          from '@/pages/LoginPage'
+import RegisterPage       from '@/pages/RegisterPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import ResetPasswordPage  from '@/pages/ResetPasswordPage'
+import LandingPage        from '@/pages/LandingPage'
+
+// App pages — lazy load (only needed after login)
+const FeedPage      = lazy(() => import('@/pages/FeedPage'))
+const ProfilePage   = lazy(() => import('@/pages/ProfilePage'))
+const MessagesPage  = lazy(() => import('@/pages/MessagesPage'))
+const NetworkPage   = lazy(() => import('@/pages/NetworkPage'))
+const JobsPage      = lazy(() => import('@/pages/JobsPage'))
+const OffersPage    = lazy(() => import('@/pages/OffersPage'))
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
+const CompaniesPage = lazy(() => import('@/pages/CompaniesPage'))
+const PricingPage   = lazy(() => import('@/pages/PricingPage'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -30,7 +32,6 @@ const PageLoader = () => (
   </div>
 )
 
-// Redirect to login if not signed in
 function Protected({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <PageLoader />
@@ -38,7 +39,6 @@ function Protected({ children }) {
   return children
 }
 
-// Redirect to feed if already signed in
 function PublicOnly({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <PageLoader />
@@ -50,7 +50,6 @@ export default function App() {
   const { setUser, setLoading, fetchProfile } = useAuthStore()
 
   useEffect(() => {
-    // Restore session when app loads (fixes stuck login after closing browser)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
@@ -59,7 +58,6 @@ export default function App() {
       setLoading(false)
     })
 
-    // Listen for auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -78,14 +76,14 @@ export default function App() {
       <Toast />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes — NOT lazy loaded */}
           <Route path="/"                element={<LandingPage />} />
           <Route path="/login"           element={<PublicOnly><LoginPage /></PublicOnly>} />
           <Route path="/register"        element={<PublicOnly><RegisterPage /></PublicOnly>} />
           <Route path="/forgot-password" element={<PublicOnly><ForgotPasswordPage /></PublicOnly>} />
           <Route path="/reset-password"  element={<ResetPasswordPage />} />
 
-          {/* Protected app routes */}
+          {/* Protected app routes — lazy loaded */}
           <Route element={<Protected><AppLayout /></Protected>}>
             <Route path="/feed"         element={<FeedPage />} />
             <Route path="/profile/:id?" element={<ProfilePage />} />

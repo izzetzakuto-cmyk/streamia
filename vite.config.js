@@ -10,16 +10,6 @@ export default defineConfig({
     },
   },
   build: {
-    // Use esbuild (built-in, no extra install needed)
     minify: 'esbuild',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'supabase': ['@supabase/supabase-js'],
-          'utils': ['date-fns', 'zustand'],
-        },
-      },
-    },
   },
 })
