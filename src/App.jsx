@@ -1,25 +1,25 @@
-import { useEffect, useState, lazy, Suspense } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/store'
-
-// Layout
 import AppLayout from '@/components/layout/AppLayout'
 import Toast     from '@/components/layout/Toast'
 
-// Lazy load every page
-const LandingPage   = lazy(() => import('@/pages/LandingPage'))
-const LoginPage     = lazy(() => import('@/pages/LoginPage'))
-const RegisterPage  = lazy(() => import('@/pages/RegisterPage'))
-const FeedPage      = lazy(() => import('@/pages/FeedPage'))
-const ProfilePage   = lazy(() => import('@/pages/ProfilePage'))
-const MessagesPage  = lazy(() => import('@/pages/MessagesPage'))
-const NetworkPage   = lazy(() => import('@/pages/NetworkPage'))
-const JobsPage      = lazy(() => import('@/pages/JobsPage'))
-const OffersPage    = lazy(() => import('@/pages/OffersPage'))
-const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
-const CompaniesPage = lazy(() => import('@/pages/CompaniesPage'))
-const PricingPage   = lazy(() => import('@/pages/PricingPage'))
+// Lazy load all pages
+const LandingPage        = lazy(() => import('@/pages/LandingPage'))
+const LoginPage          = lazy(() => import('@/pages/LoginPage'))
+const RegisterPage       = lazy(() => import('@/pages/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
+const ResetPasswordPage  = lazy(() => import('@/pages/ResetPasswordPage'))
+const FeedPage           = lazy(() => import('@/pages/FeedPage'))
+const ProfilePage        = lazy(() => import('@/pages/ProfilePage'))
+const MessagesPage       = lazy(() => import('@/pages/MessagesPage'))
+const NetworkPage        = lazy(() => import('@/pages/NetworkPage'))
+const JobsPage           = lazy(() => import('@/pages/JobsPage'))
+const OffersPage         = lazy(() => import('@/pages/OffersPage'))
+const AnalyticsPage      = lazy(() => import('@/pages/AnalyticsPage'))
+const CompaniesPage      = lazy(() => import('@/pages/CompaniesPage'))
+const PricingPage        = lazy(() => import('@/pages/PricingPage'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -30,7 +30,7 @@ const PageLoader = () => (
   </div>
 )
 
-// Protected route — redirects to login if not signed in
+// Redirect to login if not signed in
 function Protected({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <PageLoader />
@@ -38,7 +38,7 @@ function Protected({ children }) {
   return children
 }
 
-// Public only — redirects to feed if already signed in
+// Redirect to feed if already signed in
 function PublicOnly({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <PageLoader />
@@ -50,7 +50,7 @@ export default function App() {
   const { setUser, setLoading, fetchProfile } = useAuthStore()
 
   useEffect(() => {
-    // Check for existing session on load (restores session after closing browser)
+    // Restore session when app loads (fixes stuck login after closing browser)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
@@ -59,16 +59,14 @@ export default function App() {
       setLoading(false)
     })
 
-    // Listen for login/logout/token refresh events
+    // Listen for auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           setUser(session?.user ?? null)
           if (session?.user) await fetchProfile(session.user.id)
         }
-        if (event === 'SIGNED_OUT') {
-          setUser(null)
-        }
+        if (event === 'SIGNED_OUT') setUser(null)
       }
     )
 
@@ -80,10 +78,14 @@ export default function App() {
       <Toast />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/"         element={<LandingPage />} />
-          <Route path="/login"    element={<PublicOnly><LoginPage /></PublicOnly>} />
-          <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
+          {/* Public routes */}
+          <Route path="/"                element={<LandingPage />} />
+          <Route path="/login"           element={<PublicOnly><LoginPage /></PublicOnly>} />
+          <Route path="/register"        element={<PublicOnly><RegisterPage /></PublicOnly>} />
+          <Route path="/forgot-password" element={<PublicOnly><ForgotPasswordPage /></PublicOnly>} />
+          <Route path="/reset-password"  element={<ResetPasswordPage />} />
 
+          {/* Protected app routes */}
           <Route element={<Protected><AppLayout /></Protected>}>
             <Route path="/feed"         element={<FeedPage />} />
             <Route path="/profile/:id?" element={<ProfilePage />} />
