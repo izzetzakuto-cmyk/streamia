@@ -10,7 +10,8 @@ export default defineConfig({
     },
   },
   build: {
-    // Split vendor chunks so browser can cache them separately
+    // Use esbuild (built-in, no extra install needed)
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -18,14 +19,6 @@ export default defineConfig({
           'supabase': ['@supabase/supabase-js'],
           'utils': ['date-fns', 'zustand'],
         },
-      },
-    },
-    // Compress output
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true,
       },
     },
   },
