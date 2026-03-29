@@ -10,6 +10,7 @@ const PLATFORMS = [
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const [accountType, setAccountType] = useState(null) // null | 'streamer' | 'company'
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [form, setForm] = useState({
@@ -91,6 +92,59 @@ export default function RegisterPage() {
       setErrorMsg('Something went wrong. Please try again.')
       setLoading(false)
     }
+  }
+
+  // Show account type picker first
+  if (!accountType) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
+          <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
+            <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
+            Stream<span className="text-accent">Link</span>
+          </div>
+          <h1 className="text-[22px] font-extrabold mb-1">Join Streamia</h1>
+          <p className="text-sm text-gray-400 mb-6">How do you want to use Streamia?</p>
+
+          <div className="space-y-3">
+            <button onClick={() => setAccountType('streamer')}
+              className="w-full p-4 border-2 border-gray-200 hover:border-accent hover:bg-accent-lt rounded-2xl text-left transition group">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-accent to-purple-400 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎮</div>
+                <div className="flex-1">
+                  <div className="font-extrabold text-[15px] group-hover:text-accent transition">I'm a Streamer</div>
+                  <div className="text-[12.5px] text-gray-400 mt-0.5">Find brand deals, connect with creators, grow your network</div>
+                </div>
+                <span className="text-gray-300 group-hover:text-accent text-xl transition">→</span>
+              </div>
+              <div className="mt-2 ml-16">
+                <span className="text-[11px] bg-green-50 text-green-700 font-bold px-2 py-0.5 rounded-full">Always Free</span>
+              </div>
+            </button>
+
+            <button onClick={() => navigate('/register/company')}
+              className="w-full p-4 border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 rounded-2xl text-left transition group">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🏢</div>
+                <div className="flex-1">
+                  <div className="font-extrabold text-[15px] group-hover:text-purple-600 transition">I'm a Brand / Company</div>
+                  <div className="text-[12.5px] text-gray-400 mt-0.5">Post deals, find creators, run campaigns at scale</div>
+                </div>
+                <span className="text-gray-300 group-hover:text-purple-500 text-xl transition">→</span>
+              </div>
+              <div className="mt-2 ml-16">
+                <span className="text-[11px] bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-full">Free + Paid plans</span>
+              </div>
+            </button>
+          </div>
+
+          <p className="text-center text-sm text-gray-400 mt-6">
+            Already have an account?{' '}
+            <Link to="/login" className="text-accent font-semibold hover:underline">Sign in</Link>
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
