@@ -1,3 +1,4 @@
+import { SkeletonProfile } from '@/components/ui/Skeleton'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore, useAppStore } from '@/lib/store'
@@ -15,6 +16,7 @@ export default function NetworkPage() {
   const [connections, setConnections] = useState([])
   const [following, setFollowing] = useState([])
   const [loading, setLoading] = useState(true)
+  const dataCache = {}
   const [sent, setSent] = useState(new Set())
 
   const fetchAll = async () => {

@@ -1,58 +1,75 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
+import { SkeletonPost, SkeletonProfile } from '@/components/ui/Skeleton'
 
-function PostCard({ post, onLike }) {
+// ── Fetchers ──
+const fetchPosts = async () => {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('id, content, likes_count, comments_count, created_at, user_id, profiles(id, display_name, handle, category, is_live)')
+    .order('created_at', { ascending: false })
+    .limit(20)
+  if (error) throw error
+  return data || []
+}
+
+const fetchProfile = async (userId) => {
+  const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+  return data
+}
+
+// ── Post Card ──
+function PostCard({ post, currentUserId }) {
   const [liked, setLiked] = useState(false)
+  const initials = post.profiles?.display_name?.slice(0, 2).toUpperCase() || '??'
+  const timeAgo = post.created_at ? formatDistanceToNow(new Date(post.created_at), { addSuffix: true }) : ''
 
-  const handleLike = () => {
-    setLiked(!liked)
-    onLike(post.id, liked)
+  const handleLike = async () => {
+    // Optimistic update — feels instant
+    setLiked(l => !l)
+    mutate('posts', (posts) => posts?.map(p =>
+      p.id === post.id ? { ...p, likes_count: (p.likes_count || 0) + (liked ? -1 : 1) } : p
+    ), false)
+    if (!liked) {
+      await supabase.from('post_likes').insert({ post_id: post.id, user_id: currentUserId })
+    } else {
+      await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', currentUserId)
+    }
   }
-
-  const initials = post.profiles?.display_name?.slice(0, 2).toUpperCase() || 'UN'
-  const timeAgo = post.created_at
-    ? formatDistanceToNow(new Date(post.created_at), { addSuffix: true })
-    : ''
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition">
-      {/* Post header */}
       <div className="flex gap-3 p-4 pb-0 items-start">
         <div className="w-11 h-11 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
           {initials}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[13.5px] font-bold">{post.profiles?.display_name || 'Unknown'}</div>
+          <div className="flex items-center gap-2">
+            <span className="text-[13.5px] font-bold">{post.profiles?.display_name || 'Unknown'}</span>
+            {post.profiles?.is_live && <span className="text-[9.5px] bg-live text-white font-black px-1.5 py-0.5 rounded-full">LIVE</span>}
+          </div>
           <div className="flex items-center gap-2 mt-0.5">
-            {post.profiles?.category && (
-              <span className="text-[11.5px] text-gray-400">{post.profiles.category}</span>
-            )}
+            {post.profiles?.category && <span className="text-[11.5px] text-gray-400">{post.profiles.category}</span>}
             <span className="text-[11px] text-gray-300">{timeAgo}</span>
           </div>
         </div>
       </div>
-
-      {/* Post body */}
       <div className="px-4 py-3">
         <p className="text-[13.5px] leading-relaxed text-gray-800">{post.content}</p>
       </div>
-
-      {/* Actions */}
       <div className="flex border-t border-gray-100">
-        <button
-          onClick={handleLike}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold transition hover:bg-gray-50
-            ${liked ? 'text-live' : 'text-gray-500'}`}
-        >
+        <button onClick={handleLike}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold transition hover:bg-gray-50 rounded-bl-xl
+            ${liked ? 'text-live' : 'text-gray-500'}`}>
           {liked ? '❤️' : '🤍'} {(post.likes_count || 0) + (liked ? 1 : 0)}
         </button>
         <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold text-gray-500 hover:bg-gray-50 transition">
           💬 {post.comments_count || 0}
         </button>
-        <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold text-gray-500 hover:bg-gray-50 transition">
+        <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold text-gray-500 hover:bg-gray-50 transition rounded-br-xl">
           ↗️ Share
         </button>
       </div>
@@ -60,26 +77,27 @@ function PostCard({ post, onLike }) {
   )
 }
 
-function Composer({ onPost }) {
-  const { profile } = useAuthStore()
+// ── Composer ──
+function Composer({ userId }) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const { showToast } = useAppStore()
+  const { profile } = useAuthStore()
 
   const handlePost = async () => {
     if (!content.trim()) return
     setLoading(true)
-    const { error } = await supabase.from('posts').insert({ content: content.trim() })
+    const { error } = await supabase.from('posts').insert({ content: content.trim(), user_id: userId })
     if (error) showToast(error.message, 'error')
     else {
-      showToast('✅ Post shared!')
       setContent('')
-      onPost()
+      showToast('✅ Posted!')
+      mutate('posts') // Refresh feed
     }
     setLoading(false)
   }
 
-  const initials = profile?.display_name?.slice(0, 2).toUpperCase() || 'ME'
+  const initials = profile?.display_name?.slice(0, 2).toUpperCase() || '??'
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
@@ -87,121 +105,50 @@ function Composer({ onPost }) {
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
           {initials}
         </div>
-        <input
-          type="text"
-          placeholder="Share a clip, milestone, or collab request…"
-          className="flex-1 h-10 bg-bg border border-gray-200 rounded-full px-4 text-[13px] outline-none focus:bg-white focus:border-accent transition"
+        <textarea
+          className="flex-1 min-h-[44px] max-h-32 bg-bg border border-gray-200 rounded-2xl px-4 py-2.5 text-[13px] outline-none focus:bg-white focus:border-accent transition resize-none"
+          placeholder="Share something with the community…"
           value={content}
+          rows={1}
           onChange={e => setContent(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handlePost()}
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handlePost())}
         />
       </div>
-      <div className="border-t border-gray-100 pt-2 flex justify-end">
-        <button
-          onClick={handlePost} disabled={loading || !content.trim()}
-          className="px-5 py-1.5 bg-accent hover:bg-accent-dk text-white text-[13px] font-bold rounded-full transition disabled:opacity-50"
-        >
-          {loading ? 'Posting…' : 'Post'}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          {['🎮 Clip', '📅 Schedule', '📊 Stats'].map(tag => (
+            <button key={tag} onClick={() => setContent(c => c + ' ' + tag.split(' ')[0])}
+              className="text-[11.5px] text-gray-400 hover:text-accent font-semibold transition">{tag}</button>
+          ))}
+        </div>
+        <button onClick={handlePost} disabled={!content.trim() || loading}
+          className="px-5 py-1.5 bg-accent hover:bg-accent-dk text-white text-[13px] font-bold rounded-full transition disabled:opacity-50 flex items-center gap-2">
+          {loading ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
+          Post
         </button>
       </div>
     </div>
   )
 }
 
-export default function FeedPage() {
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const { showToast } = useAppStore()
-
-  const fetchPosts = async () => {
-    const { data, error } = await supabase
-      .from('posts')
-      .select(`*, profiles(display_name, handle, category, platforms)`)
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    if (error) showToast(error.message, 'error')
-    else setPosts(data || [])
-    setLoading(false)
-  }
-
-  const handleLike = async (postId, wasLiked) => {
-    await supabase.from('post_likes').upsert({ post_id: postId })
-  }
-
-  useEffect(() => {
-    fetchPosts()
-
-    // Real-time subscription
-    const channel = supabase
-      .channel('posts-feed')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, fetchPosts)
-      .subscribe()
-
-    return () => supabase.removeChannel(channel)
-  }, [])
-
+// ── Sidebar widgets ──
+function ProfileSidebar({ profile }) {
+  if (!profile) return <SkeletonProfile />
+  const initials = profile.display_name?.slice(0, 2).toUpperCase() || '??'
   return (
-    <div className="max-w-[1100px] mx-auto px-4 py-5">
-      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr_280px] gap-4">
-
-        {/* Left sidebar */}
-        <aside className="hidden md:block space-y-3">
-          <ProfileSidebar />
-          <TrendingTags />
-        </aside>
-
-        {/* Feed */}
-        <main className="space-y-3">
-          <Composer onPost={fetchPosts} />
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : posts.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-              <div className="text-4xl mb-3">🎙️</div>
-              <div className="font-bold text-gray-800 mb-1">No posts yet</div>
-              <div className="text-sm text-gray-400">Be the first to post something!</div>
-            </div>
-          ) : (
-            posts.map(post => <PostCard key={post.id} post={post} onLike={handleLike} />)
-          )}
-        </main>
-
-        {/* Right sidebar */}
-        <aside className="hidden md:block space-y-3">
-          <LiveNow />
-          <PeopleYouMayKnow />
-        </aside>
-      </div>
-    </div>
-  )
-}
-
-function ProfileSidebar() {
-  const { profile } = useAuthStore()
-  const navigate = useNavigate()
-  const initials = profile?.display_name?.slice(0, 2).toUpperCase() || 'ME'
-
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-      <div className="h-14 bg-gradient-to-r from-purple-100 to-blue-100" />
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="h-14 bg-gradient-to-r from-accent/20 to-purple-100" />
       <div className="px-4 pb-4">
-        <div
-          className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-purple-400 border-[3px] border-white -mt-7 flex items-center justify-center text-white font-extrabold text-lg cursor-pointer"
-          onClick={() => navigate('/profile')}
-        >{initials}</div>
-        <div className="mt-2 font-bold text-[14px] cursor-pointer hover:text-accent" onClick={() => navigate('/profile')}>
-          {profile?.display_name || 'Your Name'}
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-purple-400 border-4 border-white -mt-7 flex items-center justify-center text-white font-extrabold text-lg mb-2">
+          {initials}
         </div>
-        <div className="text-[11px] text-gray-400">@{profile?.handle || 'yourhandle'}</div>
-        <div className="text-[11.5px] text-gray-500 mt-2 line-clamp-2">{profile?.bio || 'Add a bio to your profile'}</div>
-        <div className="flex border-t border-gray-100 mt-3 -mx-4">
-          {[['Connections', '0'], ['Followers', '0'], ['Collabs', '0']].map(([l, n]) => (
-            <div key={l} className="flex-1 text-center py-2 cursor-pointer hover:bg-gray-50 transition">
-              <div className="text-[14px] font-extrabold">{n}</div>
-              <div className="text-[9.5px] text-gray-400">{l}</div>
+        <div className="font-extrabold text-[14px]">{profile.display_name}</div>
+        <div className="text-[11.5px] text-gray-400 mb-3">@{profile.handle}{profile.category && ` · ${profile.category}`}</div>
+        <div className="flex justify-between text-center border-t border-gray-100 pt-3">
+          {[['Connections', profile.connections_count || 0], ['Followers', profile.followers_count || 0]].map(([k, v]) => (
+            <div key={k}>
+              <div className="text-[15px] font-extrabold text-accent">{v}</div>
+              <div className="text-[10px] text-gray-400">{k}</div>
             </div>
           ))}
         </div>
@@ -210,76 +157,75 @@ function ProfileSidebar() {
   )
 }
 
-function TrendingTags() {
-  const tags = [['#Valorant','4,821'],['#JustChatting','3,590'],['#ColabRequest','2,104'],['#StreamSetup','1,887'],['#NewStreamer','1,204']]
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-      <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Trending Tags</div>
-      {tags.map(([tag, ct]) => (
-        <div key={tag} className="flex justify-between items-center py-1.5 cursor-pointer hover:text-accent transition border-b border-gray-50 last:border-0">
-          <span className="text-[12.5px] font-medium">{tag}</span>
-          <span className="text-[11px] text-gray-400">{ct}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
+const LIVE_NOW = [
+  { name: 'NinjaStreams', viewers: '12.4K', game: 'Valorant' },
+  { name: 'PixelKnight', viewers: '8.2K', game: 'Fortnite' },
+  { name: 'StarCaster', viewers: '5.1K', game: 'Just Chatting' },
+]
+const TAGS = ['#FPS', '#JustChatting', '#Valorant', '#Minecraft', '#IRL', '#Music']
 
-function LiveNow() {
-  const streamers = [
-    { init:'SV', name:'ShadowViper', cat:'Resident Evil 4', viewers:'12.4K', bg:'from-purple-600 to-purple-800' },
-    { init:'NX', name:'NeonXtra',    cat:'Valorant',        viewers:'8.1K',  bg:'from-green-500 to-green-700', dark:true },
-    { init:'CR', name:'CosmicRay',   cat:'Just Chatting',   viewers:'5.8K',  bg:'from-orange-500 to-red-600' },
-    { init:'LS', name:'LunaStream',  cat:'Music & Chill',   viewers:'2.9K',  bg:'from-purple-400 to-pink-600' },
-  ]
+// ── Main Page ──
+export default function FeedPage() {
+  const { user, profile } = useAuthStore()
+
+  // SWR — cached data, instant on re-visit
+  const { data: posts, isLoading } = useSWR('posts', fetchPosts, { refreshInterval: 30000 })
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
-        <div className="w-2 h-2 rounded-full bg-live animate-pulse" />
-        <span className="text-[13.5px] font-bold">Live now</span>
-        <span className="ml-auto text-[11px] text-gray-400">8,340</span>
+    <div className="max-w-[1100px] mx-auto px-4 py-5">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr_280px] gap-4">
+
+        {/* Left sidebar — desktop only */}
+        <aside className="hidden md:block space-y-3">
+          <ProfileSidebar profile={profile} />
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+            <div className="text-[12.5px] font-extrabold text-gray-500 uppercase tracking-wider mb-3">Trending Tags</div>
+            <div className="flex flex-wrap gap-1.5">
+              {TAGS.map(t => (
+                <span key={t} className="text-[11.5px] text-accent bg-accent-lt font-bold px-2.5 py-1 rounded-full cursor-pointer hover:bg-accent hover:text-white transition">{t}</span>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Feed */}
+        <main className="space-y-3">
+          <Composer userId={user?.id} />
+          {isLoading
+            ? Array(4).fill(0).map((_, i) => <SkeletonPost key={i} />)
+            : posts?.length === 0
+              ? (
+                <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+                  <div className="text-4xl mb-3">🎮</div>
+                  <div className="font-bold text-gray-600">No posts yet — be the first!</div>
+                </div>
+              )
+              : posts?.map(post => <PostCard key={post.id} post={post} currentUserId={user?.id} />)
+          }
+        </main>
+
+        {/* Right sidebar — desktop only */}
+        <aside className="hidden md:block space-y-3 sticky top-20">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
+              <div className="w-2 h-2 bg-live rounded-full animate-pulse" />
+              <span className="text-[12.5px] font-extrabold">Live Now</span>
+            </div>
+            {LIVE_NOW.map(s => (
+              <div key={s.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-live to-red-400 flex items-center justify-center text-white font-bold text-xs">
+                  {s.name.slice(0, 2)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[12px] font-bold">{s.name}</div>
+                  <div className="text-[10.5px] text-gray-400">{s.game} · {s.viewers}</div>
+                </div>
+                <div className="w-1.5 h-1.5 bg-live rounded-full" />
+              </div>
+            ))}
+          </div>
+        </aside>
       </div>
-      {streamers.map(s => (
-        <div key={s.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition">
-          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${s.bg} flex items-center justify-center font-bold text-[11px] ${s.dark ? 'text-gray-900' : 'text-white'} ring-2 ring-live/50`}>
-            {s.init}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[12.5px] font-semibold truncate">{s.name}</div>
-            <div className="text-[11px] text-gray-400 truncate">{s.cat}</div>
-          </div>
-          <span className="text-[11px] text-gray-400 font-semibold">{s.viewers}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function PeopleYouMayKnow() {
-  const { showToast } = useAppStore()
-  const people = [
-    { init:'GR', name:'GoldRush',   sub:'🟣 Twitch · 3 mutual', bg:'from-yellow-400 to-amber-600' },
-    { init:'VP', name:'VixenPlays', sub:'🟢 Kick · 7 mutual',   bg:'from-pink-500 to-rose-600' },
-    { init:'BF', name:'ByteForge',  sub:'🔴 YouTube · 2 mutual',bg:'from-cyan-500 to-blue-600' },
-  ]
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-100 text-[13.5px] font-bold">People you may know</div>
-      {people.map(p => (
-        <div key={p.name} className="flex items-center gap-3 px-4 py-2.5">
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${p.bg} flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
-            {p.init}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[12.5px] font-semibold">{p.name}</div>
-            <div className="text-[11px] text-gray-400">{p.sub}</div>
-          </div>
-          <button
-            onClick={() => showToast(`✅ Request sent to ${p.name}!`)}
-            className="text-[12px] font-bold text-accent border border-accent rounded-full px-3 py-1 hover:bg-accent hover:text-white transition"
-          >+ Connect</button>
-        </div>
-      ))}
     </div>
   )
 }

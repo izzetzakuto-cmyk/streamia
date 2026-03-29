@@ -1,3 +1,4 @@
+import { SkeletonConversation } from '@/components/ui/Skeleton'
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore, useAppStore } from '@/lib/store'
@@ -111,7 +112,8 @@ export default function MessagesPage() {
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>
-              : filtered.length === 0 ? (
+              : loading && filtered.length === 0 ? Array(5).fill(0).map((_, i) => <SkeletonConversation key={i} />)
+            :  filtered.length === 0 ? (
                 <div className="text-center py-12 px-4">
                   <div className="text-3xl mb-2">💬</div>
                   <div className="text-sm font-bold text-gray-600 mb-1">No messages yet</div>
