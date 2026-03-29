@@ -5,14 +5,14 @@ import { useAuthStore } from '@/lib/store'
 import AppLayout from '@/components/layout/AppLayout'
 import Toast     from '@/components/layout/Toast'
 
-// Auth pages — load immediately, never lazy (these are entry points)
+// Critical pages — load immediately (users land here first)
+import LandingPage        from '@/pages/LandingPage'
 import LoginPage          from '@/pages/LoginPage'
 import RegisterPage       from '@/pages/RegisterPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage  from '@/pages/ResetPasswordPage'
-import LandingPage        from '@/pages/LandingPage'
 
-// App pages — lazy load (only needed after login)
+// App pages — lazy load after login (saves ~300KB on first visit)
 const FeedPage      = lazy(() => import('@/pages/FeedPage'))
 const ProfilePage   = lazy(() => import('@/pages/ProfilePage'))
 const MessagesPage  = lazy(() => import('@/pages/MessagesPage'))
@@ -76,14 +76,12 @@ export default function App() {
       <Toast />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public routes — NOT lazy loaded */}
           <Route path="/"                element={<LandingPage />} />
           <Route path="/login"           element={<PublicOnly><LoginPage /></PublicOnly>} />
           <Route path="/register"        element={<PublicOnly><RegisterPage /></PublicOnly>} />
           <Route path="/forgot-password" element={<PublicOnly><ForgotPasswordPage /></PublicOnly>} />
           <Route path="/reset-password"  element={<ResetPasswordPage />} />
 
-          {/* Protected app routes — lazy loaded */}
           <Route element={<Protected><AppLayout /></Protected>}>
             <Route path="/feed"         element={<FeedPage />} />
             <Route path="/profile/:id?" element={<ProfilePage />} />

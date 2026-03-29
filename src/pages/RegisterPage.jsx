@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { useAppStore } from '@/lib/store'
 
 const PLATFORMS = [
   { id: 'twitch',  label: 'Twitch',  icon: '🟣', cls: 'border-purple-400 bg-purple-50 text-purple-700' },
@@ -11,8 +10,8 @@ const PLATFORMS = [
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { showToast } = useAppStore()
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const [form, setForm] = useState({
     email: '', password: '', display_name: '',
     handle: '', bio: '', category: '', platforms: []
@@ -29,41 +28,69 @@ export default function RegisterPage() {
 
   const handleRegister = async (e) => {
     e.preventDefault()
-    setLoading(true)
+    setErrorMsg('')
 
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          display_name: form.display_name,
-          handle: form.handle,
-        }
-      }
-    })
-
-    if (error) {
-      showToast(error.message, 'error')
-      setLoading(false)
+    if (form.handle.length < 3) {
+      setErrorMsg('Handle must be at least 3 characters')
       return
     }
 
-    // Create profile row
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        display_name: form.display_name,
-        handle: form.handle.toLowerCase().replace(/[^a-z0-9_]/g, ''),
-        bio: form.bio,
-        category: form.category,
-        platforms: form.platforms,
-        created_at: new Date().toISOString(),
-      })
-    }
+    setLoading(true)
 
-    showToast('🚀 Welcome to StreamLink!')
-    navigate('/feed')
-    setLoading(false)
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email.trim(),
+        password: form.password,
+        options: {
+          data: {
+            display_name: form.display_name,
+            handle: form.handle,
+          }
+        }
+      })
+
+      if (error) {
+        if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
+          setErrorMsg('This email is already registered. Try signing in instead.')
+        } else if (error.message.toLowerCase().includes('password')) {
+          setErrorMsg('Password must be at least 6 characters.')
+        } else if (error.message.toLowerCase().includes('valid email')) {
+          setErrorMsg('Please enter a valid email address.')
+        } else {
+          setErrorMsg(error.message)
+        }
+        setLoading(false)
+        return
+      }
+
+      // Create profile row
+      if (data.user) {
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: data.user.id,
+          display_name: form.display_name,
+          handle: form.handle.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          bio: form.bio,
+          category: form.category,
+          platforms: form.platforms,
+        })
+
+        if (profileError) {
+          // Handle duplicate handle
+          if (profileError.message.includes('unique') || profileError.message.includes('duplicate')) {
+            setErrorMsg('That handle is already taken. Please choose another.')
+            setLoading(false)
+            return
+          }
+        }
+      }
+
+      // Success — go to feed
+      navigate('/feed', { replace: true })
+
+    } catch (err) {
+      setErrorMsg('Something went wrong. Please try again.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -76,6 +103,12 @@ export default function RegisterPage() {
 
         <h1 className="text-2xl font-extrabold mb-1">Create your profile</h1>
         <p className="text-sm text-gray-400 mb-5">Join 42,000+ streamers</p>
+
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-[12.5px] text-red-700 font-semibold leading-relaxed">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleRegister} className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
@@ -96,7 +129,7 @@ export default function RegisterPage() {
                   className="w-full h-10 bg-bg border border-gray-200 rounded-lg pl-6 pr-3 text-sm outline-none focus:border-accent focus:bg-white transition"
                   placeholder="archerknight"
                   value={form.handle}
-                  onChange={e => setForm({ ...form, handle: e.target.value })}
+                  onChange={e => setForm({ ...form, handle: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
                 />
               </div>
             </div>
@@ -109,16 +142,18 @@ export default function RegisterPage() {
               placeholder="you@example.com"
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
+              autoComplete="email"
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Password</label>
-            <input required type="password" minLength={8}
+            <input required type="password" minLength={6}
               className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
-              placeholder="At least 8 characters"
+              placeholder="At least 6 characters"
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
+              autoComplete="new-password"
             />
           </div>
 
@@ -129,7 +164,7 @@ export default function RegisterPage() {
                 <button key={p.id} type="button"
                   onClick={() => togglePlatform(p.id)}
                   className={`py-2 px-2 rounded-xl border-2 text-xs font-bold text-center transition
-                    ${form.platforms.includes(p.id) ? p.cls + ' border-opacity-100' : 'border-gray-200 bg-gray-50 text-gray-500'}`}
+                    ${form.platforms.includes(p.id) ? p.cls : 'border-gray-200 bg-gray-50 text-gray-500'}`}
                 >
                   <div className="text-lg mb-1">{p.icon}</div>
                   {p.label}
@@ -159,9 +194,14 @@ export default function RegisterPage() {
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition mt-1 disabled:opacity-60"
+            className="w-full h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition mt-1 disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {loading ? 'Creating profile…' : 'Create my profile →'}
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Creating profile…
+              </>
+            ) : 'Create my profile →'}
           </button>
         </form>
 
