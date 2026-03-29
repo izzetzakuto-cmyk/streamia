@@ -87,7 +87,7 @@ export default function CompaniesPage() {
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 py-5">
-      <div className="grid grid-cols-[1fr_300px] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-4">
         <div className="space-y-4">
           {/* Header bar */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex items-center gap-3">

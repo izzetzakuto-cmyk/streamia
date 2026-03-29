@@ -42,3 +42,33 @@ body {
 .fade-up    { animation: fadeUp .3s ease both; }
 .slide-in   { animation: slideIn .25s ease both; }
 .live-pulse { animation: livepulse 1.8s infinite; }
+
+/* ── MOBILE SAFE AREAS ── */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent content jumping on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Smooth scrolling on iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Better tap targets on mobile */
+@media (max-width: 768px) {
+  button, a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Fix viewport on iOS Safari */
+  body {
+    min-height: 100dvh;
+  }
+}

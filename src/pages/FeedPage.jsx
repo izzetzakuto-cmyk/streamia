@@ -143,10 +143,10 @@ export default function FeedPage() {
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 py-5">
-      <div className="grid grid-cols-[240px_1fr_280px] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr_280px] gap-4">
 
         {/* Left sidebar */}
-        <aside className="space-y-3">
+        <aside className="hidden md:block space-y-3">
           <ProfileSidebar />
           <TrendingTags />
         </aside>
@@ -170,7 +170,7 @@ export default function FeedPage() {
         </main>
 
         {/* Right sidebar */}
-        <aside className="space-y-3">
+        <aside className="hidden md:block space-y-3">
           <LiveNow />
           <PeopleYouMayKnow />
         </aside>

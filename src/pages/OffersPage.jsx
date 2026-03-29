@@ -58,7 +58,7 @@ export default function OffersPage() {
         </div>
 
         {tab === 'New' && (
-          <div className="grid grid-cols-[340px_1fr]">
+          <div className="grid grid-cols-1 md:grid-cols-[340px_1fr]">
             {/* Offer list */}
             <div className="border-r border-gray-100 divide-y divide-gray-50">
               {OFFERS.map(offer => (

@@ -140,7 +140,7 @@ export default function PricingPage() {
       </div>
 
       {/* Plans */}
-      <div className="grid grid-cols-3 gap-5 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
         {PLANS.map(plan => (
           <div key={plan.id} className={`bg-white border-2 rounded-2xl p-6 relative shadow-sm ${plan.color}`}>
             {plan.badge && (

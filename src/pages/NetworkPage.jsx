@@ -108,7 +108,7 @@ export default function NetworkPage() {
             <>
               {/* SUGGESTIONS */}
               {tab === 'Suggestions' && (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {suggestions.length === 0 && <div className="col-span-3 text-center py-12 text-gray-400">No suggestions right now</div>}
                   {suggestions.map((p, i) => (
                     <div key={p.id} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
@@ -173,7 +173,7 @@ export default function NetworkPage() {
 
               {/* CONNECTIONS */}
               {tab === 'Connections' && (
-                <div className="grid grid-cols-2 gap-3 max-w-2xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
                   {connections.length === 0 && (
                     <div className="col-span-2 text-center py-12">
                       <div className="text-4xl mb-3">🤝</div>
@@ -204,7 +204,7 @@ export default function NetworkPage() {
 
               {/* FOLLOWING */}
               {tab === 'Following' && (
-                <div className="grid grid-cols-2 gap-3 max-w-2xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
                   {following.length === 0 && (
                     <div className="col-span-2 text-center py-12">
                       <div className="text-4xl mb-3">👀</div>

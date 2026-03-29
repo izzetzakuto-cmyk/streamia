@@ -96,10 +96,10 @@ export default function MessagesPage() {
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 py-5">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex" style={{ height: 'calc(100vh - 120px)' }}>
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex" style={{ height: 'calc(100dvh - 130px)' }}>
 
         {/* LEFT sidebar */}
-        <div className="w-[300px] border-r border-gray-100 flex flex-col flex-shrink-0">
+        <div className="w-full md:w-[300px] border-r border-gray-100 flex flex-col flex-shrink-0">
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[16px] font-extrabold">Messages</h2>

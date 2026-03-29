@@ -100,7 +100,7 @@ export default function JobsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-[340px_1fr] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-4">
         {/* Jobs list */}
         <div className="space-y-2">
           {filtered.length === 0 && <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400">No jobs match your filters</div>}

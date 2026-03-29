@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpis.map(k => (
           <div key={k.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-[1fr_320px] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4">
         {/* Profile views chart */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
           <div className="text-[14px] font-extrabold">Top Streams</div>
           <div className="text-[12px] text-gray-400">Your best performing recent sessions</div>
         </div>
-        <table className="w-full">
+        <div className="overflow-x-auto"><table className="w-full min-w-[500px]">
           <thead>
             <tr className="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
               <th className="text-left px-5 py-2.5">Stream</th>
@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   )
