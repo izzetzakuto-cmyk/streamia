@@ -1,5 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/store'
 import AppLayout from '@/components/layout/AppLayout'
@@ -75,6 +76,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Toast />
+      <SpeedInsights />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/"                element={<LandingPage />} />
