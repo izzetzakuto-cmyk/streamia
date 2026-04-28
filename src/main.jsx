@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { SWRConfig } from 'swr'
 import App from './App'
+import './i18n'
 import './styles/globals.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

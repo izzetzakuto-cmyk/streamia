@@ -1,33 +1,27 @@
 import { useState } from 'react'
 import useSWR from 'swr'
-import { supabase } from '@/lib/supabase'
-import { useAuthStore, useAppStore } from '@/lib/store'
+import { Link } from 'react-router-dom'
+import { Briefcase } from 'lucide-react'
+import { jobApi } from '@/lib/api'
+import { useAppStore, useAuthStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 import { SkeletonJob } from '@/components/ui/Skeleton'
 
 const JOB_TYPES = ['All', 'Sponsored Stream', 'Ambassador', 'Full Time', 'Contract', 'Event']
 const PLATFORMS = ['All', 'Twitch', 'Kick', 'YouTube', 'Multi-Platform']
 
-const SEED_JOBS = [
-  { id: 'seed-1', title: 'Brand Ambassador — Gaming Peripherals', job_type: 'Ambassador', platform: 'Multi-Platform', pay_min: 2000, pay_max: 5000, pay_period: 'month', requirements: ['10K+ followers', 'FPS/RPG content', 'Posting 3x/week'], description: 'Join our ambassador team and represent our premium gaming peripherals. You\'ll receive free products, a monthly retainer, and commission on referrals.', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), company_name: 'SteelSeries', company_logo: '🎧' },
-  { id: 'seed-2', title: 'Sponsored Stream Series — Energy Drink', job_type: 'Sponsored Stream', platform: 'Twitch', pay_min: 1500, pay_max: 2500, pay_period: 'stream', requirements: ['5K+ avg viewers', 'English speaking', '18+ audience'], description: 'Looking for high-energy streamers for a 4-part sponsored stream series.', created_at: new Date(Date.now() - 86400000).toISOString(), company_name: 'RedBull Gaming', company_logo: '🐂' },
-  { id: 'seed-3', title: 'Content Creator — Esports Org', job_type: 'Full Time', platform: 'Multi-Platform', pay_min: 40000, pay_max: 70000, pay_period: 'year', requirements: ['2+ years streaming', 'Competitive gaming exp'], description: 'Join our esports organization as a full-time content creator.', created_at: new Date(Date.now() - 86400000 * 3).toISOString(), company_name: 'G2 Esports', company_logo: '🏆' },
-  { id: 'seed-4', title: 'YouTube Integration — PC Components', job_type: 'Contract', platform: 'YouTube', pay_min: 800, pay_max: 1200, pay_period: 'stream', requirements: ['50K+ YouTube subscribers', 'Tech/gaming content'], description: 'Feature our new GPU line in setup videos and benchmark reviews.', created_at: new Date(Date.now() - 86400000 * 4).toISOString(), company_name: 'ASUS ROG', company_logo: '🖥️' },
-  { id: 'seed-5', title: 'Kick Exclusive Creator Program', job_type: 'Ambassador', platform: 'Kick', pay_min: 3000, pay_max: 8000, pay_period: 'month', requirements: ['Move to Kick platform', '1K+ concurrent viewers'], description: 'Competitive rev share, subscriber bonuses, and platform promotion.', created_at: new Date(Date.now() - 86400000).toISOString(), company_name: 'Kick', company_logo: '🟢' },
-  { id: 'seed-6', title: 'Event Coverage — Gaming Convention', job_type: 'Event', platform: 'Multi-Platform', pay_min: 2000, pay_max: 4000, pay_period: 'event', requirements: ['Portable streaming setup', 'Live interview skills'], description: 'Cover our gaming convention from the floor! Travel and accommodation covered.', created_at: new Date(Date.now() - 86400000 * 5).toISOString(), company_name: 'ESL Gaming', company_logo: '🎮' },
-]
-
 const typeColors = { 'Ambassador': 'bg-purple-50 text-purple-700', 'Sponsored Stream': 'bg-green-50 text-green-700', 'Full Time': 'bg-blue-50 text-blue-700', 'Contract': 'bg-orange-50 text-orange-700', 'Event': 'bg-pink-50 text-pink-700' }
 
 const payDisplay = (job) => {
-  if (!job.pay_min) return 'Negotiable'
+  if (!job.payMin) return 'Negotiable'
   const fmt = n => n >= 1000 ? `$${(n/1000).toFixed(0)}K` : `$${n}`
-  return `${fmt(job.pay_min)}–${fmt(job.pay_max)} / ${job.pay_period}`
+  return `${fmt(job.payMin)}–${fmt(job.payMax)} / ${job.payPeriod}`
 }
 
 export default function JobsPage() {
-  const { profile } = useAuthStore()
   const { showToast } = useAppStore()
+  const { user } = useAuthStore()
+  const isCompany = user?.role === 'company' || user?.role === 'admin'
   const [typeFilter, setTypeFilter] = useState('All')
   const [platformFilter, setPlatformFilter] = useState('All')
   const [selected, setSelected] = useState(null)
@@ -38,13 +32,13 @@ export default function JobsPage() {
 
   // SWR — cached, instant on re-visit
   const { data: dbJobs, isLoading } = useSWR('jobs', async () => {
-    const { data } = await supabase.from('jobs').select('*, company:profiles!jobs_company_id_fkey(display_name)').eq('is_active', true).order('created_at', { ascending: false })
-    return (data && data.length > 0) ? data : SEED_JOBS
+    const result = await jobApi.list({ isActive: true, limit: 50 })
+    return result.items || []
   })
 
   const jobs = dbJobs || []
   const filtered = jobs.filter(j => {
-    const typeMatch = typeFilter === 'All' || j.job_type === typeFilter
+    const typeMatch = typeFilter === 'All' || j.jobType === typeFilter
     const platMatch = platformFilter === 'All' || j.platform === platformFilter
     return typeMatch && platMatch
   })
@@ -55,22 +49,32 @@ export default function JobsPage() {
   const handleApply = async () => {
     if (!applyMsg.trim()) return
     setApplying(true)
-    if (displaySelected.id.startsWith('seed-')) {
-      setTimeout(() => {
+    try {
+      await jobApi.apply(displaySelected.id, { message: applyMsg })
+      setApplied(s => new Set([...s, displaySelected.id]))
+      showToast('🎉 Applied!')
+      setShowApply(false); setApplyMsg('')
+    } catch (err) {
+      if (err.code === 'ALREADY_APPLIED') {
         setApplied(s => new Set([...s, displaySelected.id]))
-        showToast('🎉 Application submitted!')
-        setShowApply(false); setApplyMsg(''); setApplying(false)
-      }, 600)
-      return
+        showToast('You already applied', 'error')
+      } else showToast(err.message || 'Could not apply', 'error')
     }
-    const { error } = await supabase.from('job_applications').insert({ job_id: displaySelected.id, applicant_id: profile.id, message: applyMsg })
-    if (error) showToast(error.message, 'error')
-    else { setApplied(s => new Set([...s, displaySelected.id])); showToast('🎉 Applied!'); setShowApply(false); setApplyMsg('') }
     setApplying(false)
   }
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 py-5">
+      {isCompany && (
+        <div className="mb-3 flex justify-end">
+          <Link to="/jobs/manage"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-black text-white text-[12.5px] font-bold rounded-full transition">
+            <Briefcase className="w-3.5 h-3.5" strokeWidth={2.5} />
+            Manage my jobs
+          </Link>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-4 py-3 mb-4 flex items-center gap-2 flex-wrap">
         <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Type:</span>
@@ -90,17 +94,23 @@ export default function JobsPage() {
         <div className="space-y-2">
           {isLoading
             ? Array(4).fill(0).map((_, i) => <SkeletonJob key={i} />)
-            : filtered.map(job => (
+            : filtered.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
+                <div className="text-3xl mb-2">💼</div>
+                <div className="font-bold text-gray-600">No jobs posted yet</div>
+                <div className="text-sm text-gray-400 mt-1">Check back soon!</div>
+              </div>
+            ) : filtered.map(job => (
               <div key={job.id} onClick={() => setSelected(job)}
                 className={`bg-white border rounded-xl p-4 cursor-pointer hover:shadow-md transition
                   ${displaySelected?.id === job.id ? 'border-accent shadow-sm ring-1 ring-accent/20' : 'border-gray-200'}`}>
                 <div className="flex items-start gap-3">
-                  <div className="text-2xl flex-shrink-0">{job.company_logo || '🏢'}</div>
+                  <div className="text-2xl flex-shrink-0">{job.company?.logoUrl ? <img src={job.company.logoUrl} alt="" className="w-8 h-8 rounded" /> : '🏢'}</div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px] font-bold leading-tight mb-1">{job.title}</div>
-                    <div className="text-[11.5px] text-gray-500 mb-2">{job.company_name || job.company?.display_name || 'Brand Partner'}</div>
+                    <div className="text-[11.5px] text-gray-500 mb-2">{job.company?.name || 'Brand Partner'}</div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${typeColors[job.job_type] || 'bg-gray-100 text-gray-500'}`}>{job.job_type}</span>
+                      {job.jobType && <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${typeColors[job.jobType] || 'bg-gray-100 text-gray-500'}`}>{job.jobType}</span>}
                       <span className="text-[11px] text-accent font-bold">{payDisplay(job)}</span>
                     </div>
                   </div>
@@ -116,18 +126,18 @@ export default function JobsPage() {
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-4">
-                <div className="text-4xl">{displaySelected.company_logo || '🏢'}</div>
+                <div className="text-4xl">{displaySelected.company?.logoUrl ? <img src={displaySelected.company.logoUrl} alt="" className="w-12 h-12 rounded" /> : '🏢'}</div>
                 <div>
                   <h2 className="text-[18px] font-extrabold leading-tight mb-1">{displaySelected.title}</h2>
-                  <div className="text-[13px] text-gray-500 font-semibold">{displaySelected.company_name || displaySelected.company?.display_name}</div>
+                  <div className="text-[13px] text-gray-500 font-semibold">{displaySelected.company?.name}</div>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${typeColors[displaySelected.job_type] || 'bg-gray-100 text-gray-500'}`}>{displaySelected.job_type}</span>
+                    {displaySelected.jobType && <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${typeColors[displaySelected.jobType] || 'bg-gray-100 text-gray-500'}`}>{displaySelected.jobType}</span>}
                     <span className="text-[11.5px] bg-green-50 text-green-700 font-bold px-2.5 py-1 rounded-full">💰 {payDisplay(displaySelected)}</span>
-                    <span className="text-[11.5px] bg-gray-100 text-gray-600 font-semibold px-2.5 py-1 rounded-full">📱 {displaySelected.platform}</span>
+                    {displaySelected.platform && <span className="text-[11.5px] bg-gray-100 text-gray-600 font-semibold px-2.5 py-1 rounded-full">📱 {displaySelected.platform}</span>}
                   </div>
                 </div>
               </div>
-              <div className="text-[11px] text-gray-400 flex-shrink-0">{formatDistanceToNow(new Date(displaySelected.created_at), { addSuffix: true })}</div>
+              <div className="text-[11px] text-gray-400 flex-shrink-0">{formatDistanceToNow(new Date(displaySelected.createdAt), { addSuffix: true })}</div>
             </div>
             <p className="text-[13.5px] text-gray-700 leading-relaxed mb-5">{displaySelected.description}</p>
             {displaySelected.requirements?.length > 0 && (

@@ -1,6 +1,6 @@
 import { SkeletonStat } from '@/components/ui/Skeleton'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { analyticsApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
 
 const BAR_HEIGHTS = [40, 65, 55, 80, 70, 95, 75, 88, 60, 72, 85, 100]
@@ -16,17 +16,17 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (!profile) return
-    const fetch = async () => {
-      const [postsRes, connsRes, msgsRes, followsRes] = await Promise.all([
-        supabase.from('posts').select('id', { count: 'exact' }).eq('user_id', profile.id),
-        supabase.from('connections').select('id', { count: 'exact' }).or(`requester_id.eq.${profile.id},addressee_id.eq.${profile.id}`).eq('status', 'accepted'),
-        supabase.from('messages').select('id', { count: 'exact' }).eq('sender_id', profile.id),
-        supabase.from('follows').select('id', { count: 'exact' }).eq('following_id', profile.id),
-      ])
-      setStats({ posts: postsRes.count || 0, connections: connsRes.count || 0, messages: msgsRes.count || 0, followers: followsRes.count || 0 })
-      setLoading(false)
+    let cancelled = false
+    const run = async () => {
+      try {
+        const data = await analyticsApi.me()
+        if (!cancelled) setStats(data)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
-    fetch()
+    run()
+    return () => { cancelled = true }
   }, [profile])
 
   const kpis = [

@@ -1,6 +1,6 @@
 import { SkeletonProfile } from '@/components/ui/Skeleton'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { connectionApi, followApi, profileApi } from '@/lib/api'
 import { useAuthStore, useAppStore } from '@/lib/store'
 
 const TABS = ['Suggestions', 'Requests', 'Connections', 'Following']
@@ -23,59 +23,66 @@ export default function NetworkPage() {
     if (!profile) return
     setLoading(true)
 
-    // Suggestions — people not yet connected
-    const { data: allProfiles } = await supabase.from('profiles').select('*').neq('id', profile.id).limit(12)
-    const { data: myConns } = await supabase.from('connections').select('*').or(`requester_id.eq.${profile.id},addressee_id.eq.${profile.id}`)
-    const connectedIds = new Set((myConns || []).map(c => c.requester_id === profile.id ? c.addressee_id : c.requester_id))
-    setSuggestions((allProfiles || []).filter(p => !connectedIds.has(p.id)))
-
-    // Incoming requests
-    const { data: incomingReqs } = await supabase
-      .from('connections')
-      .select('*, requester:profiles!connections_requester_id_fkey(id,display_name,handle,category,platforms,bio)')
-      .eq('addressee_id', profile.id).eq('status', 'pending')
-    setRequests(incomingReqs || [])
-
-    // Accepted connections
-    const { data: acceptedConns } = await supabase
-      .from('connections')
-      .select('*, requester:profiles!connections_requester_id_fkey(id,display_name,handle,category,platforms), addressee:profiles!connections_addressee_id_fkey(id,display_name,handle,category,platforms)')
-      .or(`requester_id.eq.${profile.id},addressee_id.eq.${profile.id}`)
-      .eq('status', 'accepted')
-    setConnections(acceptedConns || [])
-
-    // Following
-    const { data: followData } = await supabase
-      .from('follows')
-      .select('*, following:profiles!follows_following_id_fkey(id,display_name,handle,category,is_live)')
-      .eq('follower_id', profile.id)
-    setFollowing(followData || [])
-
-    setLoading(false)
+    try {
+      const [sugg, conns, follows] = await Promise.all([
+        profileApi.suggestions(12),
+        connectionApi.list(),
+        followApi.myFollowing(undefined, 50),
+      ])
+      setSuggestions(sugg || [])
+      setRequests(conns.pendingIncoming || [])
+      setConnections(conns.accepted || [])
+      setFollowing(follows.items || [])
+    } catch (err) {
+      showToast(err.message || 'Could not load network', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const sendRequest = async (toId) => {
-    const { error } = await supabase.from('connections').insert({ requester_id: profile.id, addressee_id: toId })
-    if (error) showToast(error.message, 'error')
-    else { setSent(s => new Set([...s, toId])); showToast('✅ Connection request sent!') }
+    try {
+      await connectionApi.create(toId)
+      setSent(s => new Set([...s, toId]))
+      showToast('✅ Connection request sent!')
+    } catch (err) {
+      if (err.code === 'CONNECTION_EXISTS') {
+        setSent(s => new Set([...s, toId]))
+        showToast('Already requested', 'error')
+      } else {
+        showToast(err.message || 'Could not send request', 'error')
+      }
+    }
   }
 
   const acceptRequest = async (connId, fromName) => {
-    await supabase.from('connections').update({ status: 'accepted' }).eq('id', connId)
-    showToast(`🎉 You're now connected with ${fromName}!`)
-    fetchAll()
+    try {
+      await connectionApi.respond(connId, 'accepted')
+      showToast(`🎉 You're now connected with ${fromName}!`)
+      fetchAll()
+    } catch (err) {
+      showToast(err.message || 'Could not accept', 'error')
+    }
   }
 
   const declineRequest = async (connId) => {
-    await supabase.from('connections').update({ status: 'declined' }).eq('id', connId)
-    showToast('Request declined')
-    fetchAll()
+    try {
+      await connectionApi.respond(connId, 'declined')
+      showToast('Request declined')
+      fetchAll()
+    } catch (err) {
+      showToast(err.message || 'Could not decline', 'error')
+    }
   }
 
-  const unfollow = async (followId) => {
-    await supabase.from('follows').delete().eq('id', followId)
-    showToast('Unfollowed')
-    fetchAll()
+  const unfollow = async (userId) => {
+    try {
+      await followApi.unfollow(userId)
+      showToast('Unfollowed')
+      fetchAll()
+    } catch (err) {
+      showToast(err.message || 'Could not unfollow', 'error')
+    }
   }
 
   useEffect(() => { fetchAll() }, [profile])
@@ -117,9 +124,9 @@ export default function NetworkPage() {
                       <div className={`h-14 bg-gradient-to-r ${gradients[i % gradients.length]} opacity-20`} />
                       <div className="px-4 pb-4">
                         <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-extrabold -mt-6 border-[3px] border-white mb-2`}>
-                          {initials(p.display_name)}
+                          {initials(p.displayName)}
                         </div>
-                        <div className="font-bold text-[13.5px]">{p.display_name}</div>
+                        <div className="font-bold text-[13.5px]">{p.displayName}</div>
                         <div className="text-[11px] text-gray-400 mb-1">@{p.handle}</div>
                         {p.category && <div className="text-[11px] text-gray-500 mb-3">{p.category}</div>}
                         {p.platforms?.length > 0 && (
@@ -155,15 +162,15 @@ export default function NetworkPage() {
                   {requests.map((req, i) => (
                     <div key={req.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition">
                       <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-extrabold flex-shrink-0`}>
-                        {initials(req.requester?.display_name)}
+                        {initials(req.otherUser?.displayName)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-[14px]">{req.requester?.display_name}</div>
-                        <div className="text-[11.5px] text-gray-400">@{req.requester?.handle} · {req.requester?.category}</div>
-                        {req.requester?.bio && <div className="text-[12px] text-gray-500 mt-1 line-clamp-1">{req.requester.bio}</div>}
+                        <div className="font-bold text-[14px]">{req.otherUser?.displayName}</div>
+                        <div className="text-[11.5px] text-gray-400">@{req.otherUser?.handle}{req.otherUser?.category ? ` · ${req.otherUser.category}` : ''}</div>
+                        {req.otherUser?.bio && <div className="text-[12px] text-gray-500 mt-1 line-clamp-1">{req.otherUser.bio}</div>}
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        <button onClick={() => acceptRequest(req.id, req.requester?.display_name)}
+                        <button onClick={() => acceptRequest(req.id, req.otherUser?.displayName)}
                           className="px-4 py-1.5 bg-accent text-white font-bold text-[12px] rounded-full hover:bg-accent-dk transition">Accept</button>
                         <button onClick={() => declineRequest(req.id)}
                           className="px-4 py-1.5 border border-gray-200 text-gray-500 font-bold text-[12px] rounded-full hover:border-gray-400 transition">Decline</button>
@@ -184,15 +191,15 @@ export default function NetworkPage() {
                     </div>
                   )}
                   {connections.map((conn, i) => {
-                    const partner = conn.requester_id === profile?.id ? conn.addressee : conn.requester
+                    const partner = conn.otherUser
                     if (!partner) return null
                     return (
                       <div key={conn.id} className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition">
                         <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-                          {initials(partner.display_name)}
+                          {initials(partner.displayName)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-[13px]">{partner.display_name}</div>
+                          <div className="font-bold text-[13px]">{partner.displayName}</div>
                           <div className="text-[11px] text-gray-400">@{partner.handle}</div>
                         </div>
                         <button className="text-[12px] font-bold text-gray-400 hover:text-accent border border-gray-200 rounded-full px-3 py-1 hover:border-accent transition">
@@ -218,13 +225,13 @@ export default function NetworkPage() {
                     <div key={f.id} className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition">
                       <div className="relative flex-shrink-0">
                         <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-bold text-sm`}>
-                          {initials(f.following?.display_name)}
+                          {initials(f.displayName)}
                         </div>
-                        {f.following?.is_live && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-live rounded-full border-2 border-white" />}
+                        {f.isLive && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-live rounded-full border-2 border-white" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-[13px]">{f.following?.display_name}</div>
-                        <div className="text-[11px] text-gray-400">@{f.following?.handle}</div>
+                        <div className="font-bold text-[13px]">{f.displayName}</div>
+                        <div className="text-[11px] text-gray-400">@{f.handle}</div>
                       </div>
                       <button onClick={() => unfollow(f.id)} className="text-[11px] font-bold text-gray-400 hover:text-red-500 border border-gray-200 rounded-full px-3 py-1 transition">Unfollow</button>
                     </div>

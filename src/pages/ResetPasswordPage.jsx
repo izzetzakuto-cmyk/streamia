@@ -1,30 +1,27 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { authApi } from '@/lib/api'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get('token') || ''
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [ready, setReady] = useState(false)
+  const ready = Boolean(token)
 
   useEffect(() => {
-    // Supabase puts the token in the URL hash — this checks it's valid
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setReady(true)
-      }
-    })
-  }, [])
+    if (!token) setError('Missing reset token. Use the link from your email.')
+  }, [token])
 
   const handleReset = async (e) => {
     e.preventDefault()
     setError('')
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
       return
     }
     if (password !== confirm) {
@@ -33,14 +30,14 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
-
-    if (error) {
-      setError(error.message)
+    try {
+      await authApi.resetPassword(token, password)
+      navigate('/login', { replace: true })
+    } catch (err) {
+      if (err.code === 'RESET_INVALID') setError('Reset link is invalid or has expired.')
+      else setError(err.message || 'Could not reset password')
+    } finally {
       setLoading(false)
-    } else {
-      // Success — go to feed
-      navigate('/feed', { replace: true })
     }
   }
 
@@ -51,7 +48,7 @@ export default function ResetPasswordPage() {
         {/* Logo */}
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
           <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream<span className="text-accent">Link</span>
+          Stream <span className="text-accent">Link</span>
         </div>
 
         {!ready ? (
@@ -78,7 +75,7 @@ export default function ResetPasswordPage() {
                   className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   autoComplete="new-password"
                 />
               </div>
@@ -95,7 +92,7 @@ export default function ResetPasswordPage() {
                 {confirm && password !== confirm && (
                   <p className="text-[11px] text-red-500 mt-1 font-semibold">Passwords don't match</p>
                 )}
-                {confirm && password === confirm && confirm.length >= 6 && (
+                {confirm && password === confirm && confirm.length >= 8 && (
                   <p className="text-[11px] text-green-600 mt-1 font-semibold">✓ Passwords match</p>
                 )}
               </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuthStore, useAppStore } from '@/lib/store'
-import { supabase } from '@/lib/supabase'
+import { stripeApi } from '@/lib/api'
 
 const PLANS = [
   {
@@ -85,27 +85,20 @@ export default function PricingPage() {
     }
 
     setLoading(plan.id)
-
-    // Call Supabase Edge Function to create Stripe checkout session
-    const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: {
-        planId: plan.id,
-        billing,
-        priceId: billing === 'monthly' ? plan.stripePriceMonthly : plan.stripePriceYearly,
-        userId: profile.id,
-        userEmail: profile.handle + '@streamia.co', // will be replaced with real email
-        successUrl: `${window.location.origin}/companies?upgraded=true`,
-        cancelUrl: `${window.location.origin}/pricing`,
+    try {
+      const { url } = await stripeApi.checkout({ plan: plan.id, billing })
+      if (url) {
+        window.location.href = url
+        return
       }
-    })
-
-    if (error || !data?.url) {
-      showToast('Payment setup coming soon! Check back shortly.', 'error')
-      setLoading(null)
-      return
+      showToast('Checkout URL was missing from response', 'error')
+    } catch (err) {
+      if (err.code === 'STRIPE_DISABLED' || err.code === 'PRICE_MISSING') {
+        showToast('Payments are not set up yet. Check back soon!', 'error')
+      } else {
+        showToast(err.message || 'Could not start checkout', 'error')
+      }
     }
-
-    window.location.href = data.url
     setLoading(null)
   }
 

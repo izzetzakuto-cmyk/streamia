@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { Link, useParams } from 'react-router-dom'
+import { BadgeCheck, X } from 'lucide-react'
+import { connectionApi, followApi, postApi, profileApi } from '@/lib/api'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
+import ImageUpload from '@/components/ui/ImageUpload'
+import PlatformPicker from '@/components/ui/PlatformPicker'
+import { COUNTRIES, LANGUAGES } from '@/lib/countries'
 
 const TABS = ['Posts', 'Schedule', 'Stats']
 const gradients = ['from-accent to-purple-400','from-pink-500 to-rose-500','from-yellow-400 to-amber-500','from-green-500 to-emerald-600','from-cyan-500 to-blue-500']
@@ -28,67 +32,120 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
+  const [showConnections, setShowConnections] = useState(false)
+  const [connectionsList, setConnectionsList] = useState(null)
 
   const isOwnProfile = !id || id === myProfile?.id
 
   useEffect(() => {
     const targetId = id || myProfile?.id
     if (!targetId) return
+    let cancelled = false
     const load = async () => {
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', targetId).single()
-      setProfile(p)
-      setEditForm({ display_name: p?.display_name || '', handle: p?.handle || '', bio: p?.bio || '', category: p?.category || '', location: p?.location || '', website: p?.website || '', twitch_url: p?.twitch_url || '', kick_url: p?.kick_url || '', youtube_url: p?.youtube_url || '', platforms: p?.platforms || [] })
-      const { data: userPosts } = await supabase.from('posts').select('*').eq('user_id', targetId).order('created_at', { ascending: false })
-      setPosts(userPosts || [])
-      if (!isOwnProfile && myProfile) {
-        const { data: followData } = await supabase.from('follows').select('id').eq('follower_id', myProfile.id).eq('following_id', targetId).single()
-        setIsFollowing(!!followData)
-        const { data: connData } = await supabase.from('connections').select('id,status').or(`and(requester_id.eq.${myProfile.id},addressee_id.eq.${targetId}),and(requester_id.eq.${targetId},addressee_id.eq.${myProfile.id})`).single()
-        setIsConnected(connData?.status === 'accepted')
+      setLoading(true)
+      try {
+        const p = isOwnProfile ? await profileApi.me() : await profileApi.get(targetId)
+        if (cancelled) return
+        setProfile(p)
+        setEditForm({
+          displayName: p?.displayName || '',
+          handle: p?.handle || '',
+          firstName: p?.firstName || '',
+          lastName: p?.lastName || '',
+          country: p?.country || '',
+          language: p?.language || 'en',
+          bio: p?.bio || '',
+          category: p?.category || '',
+          location: p?.location || '',
+          website: p?.website || '',
+          twitchUrl: p?.twitchUrl || '',
+          kickUrl: p?.kickUrl || '',
+          youtubeUrl: p?.youtubeUrl || '',
+          platforms: p?.platforms || [],
+          avatarUrl: p?.avatarUrl || '',
+          bannerUrl: p?.bannerUrl || '',
+        })
+        setIsFollowing(Boolean(p?.isFollowing))
+        setIsConnected(p?.connectionStatus === 'accepted')
+
+        const postsResult = await postApi.byUser(targetId, undefined, 50)
+        if (cancelled) return
+        setPosts(postsResult.items || [])
+      } catch (err) {
+        if (!cancelled) showToast(err.message || 'Could not load profile', 'error')
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
     }
     load()
-  }, [id, myProfile?.id])
+    return () => { cancelled = true }
+  }, [id, myProfile?.id, isOwnProfile])
 
   const saveProfile = async () => {
     setSaving(true)
-    const { error } = await supabase.from('profiles').update(editForm).eq('id', myProfile.id)
-    if (error) showToast(error.message, 'error')
-    else {
+    try {
+      // Trim empty strings to null so blanks actually clear values
+      const patch = Object.fromEntries(
+        Object.entries(editForm).map(([k, v]) => [k, v === '' ? null : v])
+      )
+      const updated = await profileApi.updateMe(patch)
       showToast('✅ Profile updated!')
       setShowEdit(false)
-      fetchProfile(myProfile.id)
-      setProfile(p => ({ ...p, ...editForm }))
+      await fetchProfile()
+      setProfile(updated)
+    } catch (err) {
+      if (err.code === 'HANDLE_TAKEN') showToast('That handle is already taken', 'error')
+      else showToast(err.message || 'Could not save', 'error')
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   const handleFollow = async () => {
     if (!myProfile) return
-    if (isFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', myProfile.id).eq('following_id', profile.id)
-      setIsFollowing(false); showToast('Unfollowed')
-    } else {
-      await supabase.from('follows').insert({ follower_id: myProfile.id, following_id: profile.id })
-      setIsFollowing(true); showToast(`✅ Following ${profile.display_name}!`)
+    try {
+      if (isFollowing) {
+        await followApi.unfollow(profile.id)
+        setIsFollowing(false); showToast('Unfollowed')
+      } else {
+        await followApi.follow(profile.id)
+        setIsFollowing(true); showToast(`✅ Following ${profile.displayName}!`)
+      }
+    } catch (err) {
+      showToast(err.message || 'Action failed', 'error')
+    }
+  }
+
+  const openConnectionsModal = async () => {
+    if (connectionsList) return
+    try {
+      const list = await profileApi.connections(profile.id, 200)
+      setConnectionsList(list || [])
+    } catch (err) {
+      showToast(err.message || 'Failed to load connections', 'error')
+      setConnectionsList([])
     }
   }
 
   const handleConnect = async () => {
     if (!myProfile || isConnected) return
-    await supabase.from('connections').insert({ requester_id: myProfile.id, addressee_id: profile.id })
-    setIsConnected(true); showToast('✅ Connection request sent!')
+    try {
+      await connectionApi.create(profile.id)
+      setIsConnected(true); showToast('✅ Connection request sent!')
+    } catch (err) {
+      if (err.code === 'CONNECTION_EXISTS') showToast('Already connected or pending', 'error')
+      else showToast(err.message || 'Could not send request', 'error')
+    }
   }
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>
   if (!profile) return <div className="text-center py-20 text-gray-400">Profile not found</div>
 
-  const initials = profile.display_name?.slice(0, 2).toUpperCase() || '??'
+  const initials = profile.displayName?.slice(0, 2).toUpperCase() || '??'
   const statCards = [
     { label: 'Posts', value: posts.length },
-    { label: 'Connections', value: profile.connections_count || 0 },
-    { label: 'Followers', value: profile.followers_count || 0 },
+    { label: 'Connections', value: profile.connectionsCount || 0 },
+    { label: 'Followers', value: profile.followersCount || 0 },
     { label: 'Collabs', value: 0 },
   ]
 
@@ -126,27 +183,45 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <h1 className="text-[20px] font-extrabold">{profile.display_name}</h1>
+          <h1 className="text-[20px] font-extrabold">{profile.displayName}</h1>
           <div className="text-[13px] text-gray-400 mb-2">@{profile.handle}{profile.category && ` · ${profile.category}`}{profile.location && ` · 📍 ${profile.location}`}</div>
           {profile.bio && <p className="text-[13.5px] text-gray-600 leading-relaxed mb-3 max-w-xl">{profile.bio}</p>}
 
           {/* Platform badges */}
           {profile.platforms?.length > 0 && (
             <div className="flex gap-2 mb-3 flex-wrap">
-              {profile.platforms.includes('twitch')  && <a href={profile.twitch_url || '#'} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-[12px] font-bold hover:bg-purple-100 transition">🟣 Twitch</a>}
-              {profile.platforms.includes('kick')    && <a href={profile.kick_url || '#'}   className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50  text-green-700  rounded-full text-[12px] font-bold hover:bg-green-100  transition">🟢 Kick</a>}
-              {profile.platforms.includes('youtube') && <a href={profile.youtube_url || '#'} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50    text-red-700    rounded-full text-[12px] font-bold hover:bg-red-100    transition">🔴 YouTube</a>}
+              {profile.platforms.includes('twitch')  && <a href={profile.twitchUrl || '#'} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-[12px] font-bold hover:bg-purple-100 transition">🟣 Twitch</a>}
+              {profile.platforms.includes('kick')    && <a href={profile.kickUrl || '#'}   className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50  text-green-700  rounded-full text-[12px] font-bold hover:bg-green-100  transition">🟢 Kick</a>}
+              {profile.platforms.includes('youtube') && <a href={profile.youtubeUrl || '#'} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50    text-red-700    rounded-full text-[12px] font-bold hover:bg-red-100    transition">🔴 YouTube</a>}
             </div>
           )}
 
           {/* Stats row */}
           <div className="flex border-t border-gray-100 -mx-6 mt-3">
-            {statCards.map(s => (
-              <div key={s.label} className="flex-1 text-center py-3 border-r border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition">
-                <div className="text-[17px] font-extrabold">{s.value}</div>
-                <div className="text-[10.5px] text-gray-400 font-semibold">{s.label}</div>
-              </div>
-            ))}
+            {statCards.map(s => {
+              const isClickable = s.label === 'Connections' && (profile.connectionsCount ?? 0) > 0
+              const base = 'flex-1 text-center py-3 border-r border-gray-100 last:border-0 transition'
+              const content = (
+                <>
+                  <div className="text-[17px] font-extrabold">{s.value}</div>
+                  <div className="text-[10.5px] text-gray-400 font-semibold">{s.label}</div>
+                </>
+              )
+              return isClickable
+                ? (
+                  <button
+                    key={s.label}
+                    onClick={() => { setShowConnections(true); openConnectionsModal() }}
+                    className={`${base} cursor-pointer hover:bg-accent-lt/60 focus:outline-none`}>
+                    {content}
+                  </button>
+                )
+                : (
+                  <div key={s.label} className={`${base} cursor-default`}>
+                    {content}
+                  </div>
+                )
+            })}
           </div>
         </div>
       </div>
@@ -178,10 +253,10 @@ export default function ProfilePage() {
                   <p className="text-[13.5px] text-gray-700 leading-relaxed">{post.content}</p>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                     <div className="flex gap-4 text-[12px] text-gray-400">
-                      <span>❤️ {post.likes_count || 0}</span>
-                      <span>💬 {post.comments_count || 0}</span>
+                      <span>❤️ {post.likesCount || 0}</span>
+                      <span>💬 {post.commentsCount || 0}</span>
                     </div>
-                    <span className="text-[11px] text-gray-400">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                    <span className="text-[11px] text-gray-400">{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
                   </div>
                 </div>
               ))}
@@ -219,7 +294,7 @@ export default function ProfilePage() {
                   { label: 'Avg Viewers', value: '3,240', icon: '👁️', color: 'text-accent' },
                   { label: 'Peak Viewers', value: '12,890', icon: '🚀', color: 'text-green-600' },
                   { label: 'Hours Streamed', value: '487h', icon: '⏱', color: 'text-blue-500' },
-                  { label: 'Total Followers', value: profile.followers_count > 0 ? profile.followers_count.toLocaleString() : '—', icon: '👥', color: 'text-purple-500' },
+                  { label: 'Total Followers', value: profile.followersCount > 0 ? profile.followersCount.toLocaleString() : '—', icon: '👥', color: 'text-purple-500' },
                 ].map(s => (
                   <div key={s.label} className="border border-gray-200 rounded-xl p-4 text-center">
                     <div className="text-2xl mb-1">{s.icon}</div>
@@ -236,6 +311,45 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Connections modal */}
+      {showConnections && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowConnections(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h3 className="text-[15px] font-extrabold">{profile.displayName} · {profile.connectionsCount || 0} connections</h3>
+              <button onClick={() => setShowConnections(false)} aria-label="Close" className="text-gray-400 hover:text-gray-700">
+                <X className="w-4 h-4" strokeWidth={2.5} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {connectionsList === null ? (
+                <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>
+              ) : connectionsList.length === 0 ? (
+                <div className="text-center py-10 text-sm text-gray-400">No connections yet.</div>
+              ) : connectionsList.map(({ connectionId, profile: p }) => (
+                <Link key={connectionId} to={`/profile/${p.id}`}
+                  onClick={() => setShowConnections(false)}
+                  className="flex items-center gap-3 px-5 py-3 border-b border-gray-50 hover:bg-gray-50 transition">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 text-white font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {p.avatarUrl
+                      ? <img src={p.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      : (p.displayName || '??').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[13.5px] font-extrabold truncate">{p.displayName}</span>
+                      {p.isVerified && <BadgeCheck className="w-4 h-4 text-sky-500 flex-shrink-0" fill="currentColor" strokeWidth={0} />}
+                      {p.isLive && <span className="text-[9.5px] bg-live text-white font-black px-1.5 py-0.5 rounded-full">LIVE</span>}
+                    </div>
+                    <div className="text-[11.5px] text-gray-400 truncate">@{p.handle}{p.category ? ` · ${p.category}` : ''}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Profile modal */}
       {showEdit && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowEdit(false)}>
@@ -245,15 +359,29 @@ export default function ProfilePage() {
               <button onClick={() => setShowEdit(false)} className="text-gray-400 text-xl hover:text-gray-700">✕</button>
             </div>
             <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11.5px] font-bold text-gray-500 mb-1">First name</label>
+                  <input type="text" placeholder="Jordan"
+                    className="w-full h-9 bg-bg border border-gray-200 rounded-lg px-3 text-[13px] outline-none focus:border-accent"
+                    value={editForm.firstName || ''} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[11.5px] font-bold text-gray-500 mb-1">Last name</label>
+                  <input type="text" placeholder="Rivera"
+                    className="w-full h-9 bg-bg border border-gray-200 rounded-lg px-3 text-[13px] outline-none focus:border-accent"
+                    value={editForm.lastName || ''} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
+                </div>
+              </div>
               {[
-                { key: 'display_name', label: 'Display Name', placeholder: 'Your name' },
+                { key: 'displayName', label: 'Display Name', placeholder: 'Your name' },
                 { key: 'handle', label: 'Handle', placeholder: 'yourhandle' },
                 { key: 'category', label: 'Category', placeholder: 'e.g. FPS, Just Chatting' },
-                { key: 'location', label: 'Location', placeholder: 'City, Country' },
+                { key: 'location', label: 'Location', placeholder: 'City' },
                 { key: 'website', label: 'Website', placeholder: 'https://yoursite.com' },
-                { key: 'twitch_url', label: 'Twitch URL', placeholder: 'https://twitch.tv/you' },
-                { key: 'kick_url', label: 'Kick URL', placeholder: 'https://kick.com/you' },
-                { key: 'youtube_url', label: 'YouTube URL', placeholder: 'https://youtube.com/@you' },
+                { key: 'twitchUrl', label: 'Twitch URL', placeholder: 'https://twitch.tv/you' },
+                { key: 'kickUrl', label: 'Kick URL', placeholder: 'https://kick.com/you' },
+                { key: 'youtubeUrl', label: 'YouTube URL', placeholder: 'https://youtube.com/@you' },
               ].map(field => (
                 <div key={field.key}>
                   <label className="block text-[11.5px] font-bold text-gray-500 mb-1">{field.label}</label>
@@ -262,11 +390,59 @@ export default function ProfilePage() {
                     value={editForm[field.key] || ''} onChange={e => setEditForm({ ...editForm, [field.key]: e.target.value })} />
                 </div>
               ))}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11.5px] font-bold text-gray-500 mb-1">Country</label>
+                  <select
+                    className="w-full h-9 bg-bg border border-gray-200 rounded-lg px-2 text-[13px] outline-none focus:border-accent"
+                    value={editForm.country || ''}
+                    onChange={e => setEditForm({ ...editForm, country: e.target.value || null })}
+                  >
+                    <option value="">—</option>
+                    {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11.5px] font-bold text-gray-500 mb-1">Language</label>
+                  <select
+                    className="w-full h-9 bg-bg border border-gray-200 rounded-lg px-2 text-[13px] outline-none focus:border-accent"
+                    value={editForm.language || 'en'}
+                    onChange={e => setEditForm({ ...editForm, language: e.target.value })}
+                  >
+                    {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11.5px] font-bold text-gray-500 mb-1.5">Streaming Platforms</label>
+                <PlatformPicker
+                  value={editForm.platforms || []}
+                  onChange={(slugs) => setEditForm({ ...editForm, platforms: slugs })}
+                />
+              </div>
               <div>
                 <label className="block text-[11.5px] font-bold text-gray-500 mb-1">Bio</label>
                 <textarea rows={3} placeholder="Tell your story…"
                   className="w-full bg-bg border border-gray-200 rounded-lg p-2.5 text-[13px] outline-none focus:border-accent resize-none"
                   value={editForm.bio || ''} onChange={e => setEditForm({ ...editForm, bio: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-[11.5px] font-bold text-gray-500 mb-1.5">Avatar</label>
+                <ImageUpload
+                  kind="avatar"
+                  value={editForm.avatarUrl || ''}
+                  onChange={(url) => setEditForm({ ...editForm, avatarUrl: url })}
+                  label="Upload avatar"
+                />
+              </div>
+              <div>
+                <label className="block text-[11.5px] font-bold text-gray-500 mb-1.5">Banner</label>
+                <ImageUpload
+                  kind="banner"
+                  value={editForm.bannerUrl || ''}
+                  onChange={(url) => setEditForm({ ...editForm, bannerUrl: url })}
+                  label="Upload banner"
+                />
               </div>
             </div>
             <div className="flex gap-3 mt-5">

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { authApi } from '@/lib/api'
+import { useAuthStore } from '@/lib/store'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const acceptSession = useAuthStore((s) => s.acceptSession)
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -14,26 +16,13 @@ export default function LoginPage() {
     setErrorMsg('')
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: form.email.trim(),
-        password: form.password,
-      })
-      if (error) {
-        if (error.message.toLowerCase().includes('email not confirmed')) {
-          setErrorMsg('📧 Please check your email inbox and click the confirmation link we sent you.')
-        } else if (error.message.toLowerCase().includes('invalid login') || error.message.toLowerCase().includes('invalid credentials')) {
-          setErrorMsg('❌ Wrong email or password. Please try again.')
-        } else if (error.message.toLowerCase().includes('too many')) {
-          setErrorMsg('⏳ Too many attempts. Please wait a minute and try again.')
-        } else {
-          setErrorMsg(error.message)
-        }
-        setLoading(false)
-        return
-      }
-      if (data?.session) navigate('/feed', { replace: true })
+      const result = await authApi.login({ email: form.email.trim(), password: form.password })
+      await acceptSession(result)
+      navigate('/feed', { replace: true })
     } catch (err) {
-      setErrorMsg('Something went wrong. Please try again.')
+      if (err.code === 'INVALID_CREDENTIALS') setErrorMsg('❌ Wrong email or password. Please try again.')
+      else if (err.code === 'VALIDATION_ERROR') setErrorMsg('Please fill in email and password correctly.')
+      else setErrorMsg(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
     }
   }
@@ -44,7 +33,7 @@ export default function LoginPage() {
 
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
           <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream<span className="text-accent">Link</span>
+          Stream <span className="text-accent">Link</span>
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">Welcome back</h1>

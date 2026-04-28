@@ -1,31 +1,26 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-
-const PLATFORMS = [
-  { id: 'twitch',  label: 'Twitch',  icon: '🟣', cls: 'border-purple-400 bg-purple-50 text-purple-700' },
-  { id: 'kick',    label: 'Kick',    icon: '🟢', cls: 'border-green-400 bg-green-50 text-green-700' },
-  { id: 'youtube', label: 'YouTube', icon: '🔴', cls: 'border-red-400 bg-red-50 text-red-700' },
-]
+import { authApi, profileApi } from '@/lib/api'
+import { useAuthStore } from '@/lib/store'
+import PlatformPicker from '@/components/ui/PlatformPicker'
+import ImageUpload from '@/components/ui/ImageUpload'
+import { COUNTRIES, LANGUAGES } from '@/lib/countries'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const acceptSession = useAuthStore((s) => s.acceptSession)
   const [accountType, setAccountType] = useState(null) // null | 'streamer' | 'company'
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [form, setForm] = useState({
-    email: '', password: '', display_name: '',
-    handle: '', bio: '', category: '', platforms: []
+    email: '', password: '',
+    first_name: '', last_name: '',
+    display_name: '', handle: '',
+    bio: '', category: '',
+    country: 'TR', language: 'en',
+    platforms: [],
+    avatar_url: '',
   })
-
-  const togglePlatform = (p) => {
-    setForm(f => ({
-      ...f,
-      platforms: f.platforms.includes(p)
-        ? f.platforms.filter(x => x !== p)
-        : [...f.platforms, p]
-    }))
-  }
 
   const handleRegister = async (e) => {
     e.preventDefault()
@@ -35,61 +30,42 @@ export default function RegisterPage() {
       setErrorMsg('Handle must be at least 3 characters')
       return
     }
+    if (form.password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters.')
+      return
+    }
 
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const result = await authApi.signup({
         email: form.email.trim(),
         password: form.password,
-        options: {
-          data: {
-            display_name: form.display_name,
-            handle: form.handle,
-          }
-        }
+        displayName: form.display_name.trim(),
+        handle: form.handle.toLowerCase(),
+        firstName: form.first_name.trim() || null,
+        lastName: form.last_name.trim() || null,
+        country: form.country || undefined,
+        language: form.language || 'tr',
       })
+      await acceptSession(result)
 
-      if (error) {
-        if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
-          setErrorMsg('This email is already registered. Try signing in instead.')
-        } else if (error.message.toLowerCase().includes('password')) {
-          setErrorMsg('Password must be at least 6 characters.')
-        } else if (error.message.toLowerCase().includes('valid email')) {
-          setErrorMsg('Please enter a valid email address.')
-        } else {
-          setErrorMsg(error.message)
-        }
-        setLoading(false)
-        return
+      // Patch additional profile fields that don't fit the signup body
+      const patch = {}
+      if (form.bio) patch.bio = form.bio
+      if (form.category) patch.category = form.category
+      if (form.platforms.length) patch.platforms = form.platforms
+      if (form.avatar_url) patch.avatarUrl = form.avatar_url
+      if (Object.keys(patch).length) {
+        try { await profileApi.updateMe(patch) } catch { /* non-fatal */ }
       }
 
-      // Create profile row
-      if (data.user) {
-        const { error: profileError } = await supabase.from('profiles').upsert({
-          id: data.user.id,
-          display_name: form.display_name,
-          handle: form.handle.toLowerCase().replace(/[^a-z0-9_]/g, ''),
-          bio: form.bio,
-          category: form.category,
-          platforms: form.platforms,
-        })
-
-        if (profileError) {
-          // Handle duplicate handle
-          if (profileError.message.includes('unique') || profileError.message.includes('duplicate')) {
-            setErrorMsg('That handle is already taken. Please choose another.')
-            setLoading(false)
-            return
-          }
-        }
-      }
-
-      // Success — go to feed
       navigate('/feed', { replace: true })
-
     } catch (err) {
-      setErrorMsg('Something went wrong. Please try again.')
+      if (err.code === 'EMAIL_TAKEN') setErrorMsg('This email is already registered. Try signing in instead.')
+      else if (err.code === 'HANDLE_TAKEN') setErrorMsg('That handle is already taken. Please choose another.')
+      else if (err.code === 'VALIDATION_ERROR') setErrorMsg('Please check your inputs and try again.')
+      else setErrorMsg(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
     }
   }
@@ -101,7 +77,7 @@ export default function RegisterPage() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
           <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
             <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-            Stream<span className="text-accent">Link</span>
+            Stream <span className="text-accent">Link</span>
           </div>
           <h1 className="text-[22px] font-extrabold mb-1">Join Streamia</h1>
           <p className="text-sm text-gray-400 mb-6">How do you want to use Streamia?</p>
@@ -152,7 +128,7 @@ export default function RegisterPage() {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-5">
           <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream<span className="text-accent">Link</span>
+          Stream <span className="text-accent">Link</span>
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">Create your profile</h1>
@@ -165,6 +141,29 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleRegister} className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">First name <span className="font-normal text-gray-300">(optional)</span></label>
+              <input type="text"
+                className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                placeholder="Jordan"
+                value={form.first_name}
+                onChange={e => setForm({ ...form, first_name: e.target.value })}
+                autoComplete="given-name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Last name <span className="font-normal text-gray-300">(optional)</span></label>
+              <input type="text"
+                className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                placeholder="Rivera"
+                value={form.last_name}
+                onChange={e => setForm({ ...form, last_name: e.target.value })}
+                autoComplete="family-name"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">Display Name</label>
@@ -202,29 +201,54 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Password</label>
-            <input required type="password" minLength={6}
+            <input required type="password" minLength={8}
               className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
               autoComplete="new-password"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 mb-2">Your Platforms</label>
-            <div className="grid grid-cols-3 gap-2">
-              {PLATFORMS.map(p => (
-                <button key={p.id} type="button"
-                  onClick={() => togglePlatform(p.id)}
-                  className={`py-2 px-2 rounded-xl border-2 text-xs font-bold text-center transition
-                    ${form.platforms.includes(p.id) ? p.cls : 'border-gray-200 bg-gray-50 text-gray-500'}`}
-                >
-                  <div className="text-lg mb-1">{p.icon}</div>
-                  {p.label}
-                </button>
-              ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Country</label>
+              <select
+                className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                value={form.country}
+                onChange={e => setForm({ ...form, country: e.target.value })}
+              >
+                {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
             </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Language</label>
+              <select
+                className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                value={form.language}
+                onChange={e => setForm({ ...form, language: e.target.value })}
+              >
+                {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-2">Profile Photo <span className="font-normal text-gray-300">(optional)</span></label>
+            <ImageUpload
+              kind="avatar"
+              value={form.avatar_url}
+              onChange={(url) => setForm({ ...form, avatar_url: url })}
+              label="Upload photo"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-2">Your Streaming Platforms</label>
+            <PlatformPicker
+              value={form.platforms}
+              onChange={(slugs) => setForm({ ...form, platforms: slugs })}
+            />
           </div>
 
           <div>

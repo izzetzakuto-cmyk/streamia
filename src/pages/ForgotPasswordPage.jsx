@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { authApi } from '@/lib/api'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -13,15 +13,12 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
+    try {
+      await authApi.forgotPassword(email.trim())
       setSent(true)
+    } catch (err) {
+      setError(err.message || 'Failed to send reset link')
+    } finally {
       setLoading(false)
     }
   }
@@ -33,7 +30,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
           <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream<span className="text-accent">Link</span>
+          Stream <span className="text-accent">Link</span>
         </div>
 
         {!sent ? (

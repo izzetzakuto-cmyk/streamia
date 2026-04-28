@@ -1,6 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/store'
 import AppLayout from '@/components/layout/AppLayout'
 import Toast     from '@/components/layout/Toast'
@@ -23,6 +22,12 @@ const OffersPage    = lazy(() => import('@/pages/OffersPage'))
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
 const CompaniesPage = lazy(() => import('@/pages/CompaniesPage'))
 const PricingPage   = lazy(() => import('@/pages/PricingPage'))
+const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'))
+const ReviewsPage = lazy(() => import('@/pages/ReviewsPage'))
+const AdminPage = lazy(() => import('@/pages/AdminPage'))
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
+const ManageJobsPage = lazy(() => import('@/pages/ManageJobsPage'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -48,29 +53,11 @@ function PublicOnly({ children }) {
 }
 
 export default function App() {
-  const { setUser, setLoading, fetchProfile } = useAuthStore()
+  const bootstrap = useAuthStore((s) => s.bootstrap)
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        await fetchProfile(session.user.id)
-      }
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setUser(session?.user ?? null)
-          if (session?.user) await fetchProfile(session.user.id)
-        }
-        if (event === 'SIGNED_OUT') setUser(null)
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
+    bootstrap()
+  }, [bootstrap])
 
   return (
     <BrowserRouter>
@@ -93,6 +80,12 @@ export default function App() {
             <Route path="/offers"       element={<OffersPage />} />
             <Route path="/analytics"    element={<AnalyticsPage />} />
             <Route path="/companies"    element={<CompaniesPage />} />
+            <Route path="/leaderboard"  element={<LeaderboardPage />} />
+            <Route path="/reviews"      element={<ReviewsPage />} />
+            <Route path="/admin"        element={<AdminPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/settings"      element={<SettingsPage />} />
+            <Route path="/jobs/manage"   element={<ManageJobsPage />} />
             <Route path="/pricing"      element={<PricingPage />} />
             <Route path="/app"          element={<Navigate to="/feed" replace />} />
           </Route>

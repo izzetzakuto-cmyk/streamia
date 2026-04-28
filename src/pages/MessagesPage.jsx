@@ -1,6 +1,9 @@
 import { SkeletonConversation } from '@/components/ui/Skeleton'
 import { useEffect, useState, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { Link } from 'react-router-dom'
+import { AlertTriangle, Crown } from 'lucide-react'
+import { messageApi, profileApi, subscriptionApi, stripeApi } from '@/lib/api'
+import { getSocket } from '@/lib/socket'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -18,64 +21,84 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showNewDM, setShowNewDM] = useState(false)
   const [searchResults, setSearchResults] = useState([])
+  const [subInfo, setSubInfo] = useState(null)
+  const [upgrading, setUpgrading] = useState(false)
   const messagesEndRef = useRef(null)
+
+  const refreshSub = () => subscriptionApi.me().then(setSubInfo).catch(() => {})
+
+  useEffect(() => { refreshSub() }, [])
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
 
   const fetchConversations = async () => {
     if (!profile) return
-    const { data, error } = await supabase
-      .from('messages')
-      .select(`*, sender:profiles!messages_sender_id_fkey(id,display_name,handle,is_live), receiver:profiles!messages_receiver_id_fkey(id,display_name,handle,is_live)`)
-      .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
-      .order('created_at', { ascending: false })
-
-    if (!error && data) {
-      const convMap = {}
-      data.forEach(msg => {
-        const partner = msg.sender_id === profile.id ? msg.receiver : msg.sender
-        if (!partner) return
-        if (!convMap[partner.id]) convMap[partner.id] = { partner, lastMessage: msg, unread: 0 }
-        if (!msg.is_read && msg.receiver_id === profile.id) convMap[partner.id].unread++
-      })
-      setConversations(Object.values(convMap))
+    try {
+      const data = await messageApi.conversations()
+      setConversations(data || [])
+    } catch (err) {
+      showToast(err.message || 'Could not load conversations', 'error')
     }
     setLoading(false)
   }
 
   const fetchMessages = async (partnerId) => {
     if (!profile) return
-    const { data } = await supabase
-      .from('messages')
-      .select('*, sender:profiles!messages_sender_id_fkey(id,display_name,handle)')
-      .or(`and(sender_id.eq.${profile.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${profile.id})`)
-      .order('created_at', { ascending: true })
-    setMessages(data || [])
-    await supabase.from('messages').update({ is_read: true }).eq('receiver_id', profile.id).eq('sender_id', partnerId)
-    setTimeout(scrollToBottom, 100)
+    try {
+      const { items } = await messageApi.with(partnerId, undefined, 50)
+      setMessages(items || [])
+      try { await messageApi.markRead(partnerId) } catch { /* non-fatal */ }
+      setTimeout(scrollToBottom, 100)
+    } catch (err) {
+      showToast(err.message || 'Could not load messages', 'error')
+    }
   }
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConvo || sending) return
     setSending(true)
-    const { error } = await supabase.from('messages').insert({
-      sender_id: profile.id,
-      receiver_id: activeConvo.partner.id,
-      content: newMessage.trim(),
-    })
-    if (error) showToast(error.message, 'error')
-    else { setNewMessage(''); fetchMessages(activeConvo.partner.id); fetchConversations() }
+    try {
+      await messageApi.send(activeConvo.partner.id, newMessage.trim())
+      setNewMessage('')
+      // Socket.IO will push `message:new` back; we'll pick it up and append
+      refreshSub()
+    } catch (err) {
+      if (err.code === 'MESSAGE_LIMIT_REACHED') {
+        showToast('Daily message limit reached — upgrade for unlimited', 'error')
+        refreshSub()
+      } else {
+        showToast(err.message || 'Could not send', 'error')
+      }
+    }
     setSending(false)
+  }
+
+  const startUpgrade = async (plan = 'pro', billing = 'monthly') => {
+    setUpgrading(true)
+    try {
+      const { url } = await stripeApi.checkout({ plan, billing })
+      if (url) { window.location.href = url; return }
+      showToast('Checkout URL missing', 'error')
+    } catch (err) {
+      if (err.code === 'STRIPE_DISABLED' || err.code === 'PRICE_MISSING') {
+        showToast('Payments are not set up yet. Check back soon!', 'error')
+      } else showToast(err.message || 'Checkout failed', 'error')
+    }
+    setUpgrading(false)
   }
 
   const searchPeople = async (q) => {
     if (!q.trim()) { setSearchResults([]); return }
-    const { data } = await supabase.from('profiles').select('id,display_name,handle,category').neq('id', profile?.id).ilike('display_name', `%${q}%`).limit(10)
-    setSearchResults(data || [])
+    try {
+      const results = await profileApi.search(q, 10)
+      setSearchResults(results || [])
+    } catch {
+      setSearchResults([])
+    }
   }
 
   const startNewDM = (p) => {
-    setActiveConvo({ partner: p, lastMessage: null, unread: 0 })
+    setActiveConvo({ partner: p, lastMessage: null, unreadCount: 0 })
     setShowNewDM(false)
     setSearchResults([])
     fetchMessages(p.id)
@@ -86,17 +109,74 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!activeConvo) return
     fetchMessages(activeConvo.partner.id)
-    const channel = supabase.channel(`dm-${activeConvo.partner.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
-        fetchMessages(activeConvo.partner.id); fetchConversations()
-      }).subscribe()
-    return () => supabase.removeChannel(channel)
   }, [activeConvo?.partner?.id])
 
-  const filtered = conversations.filter(c => c.partner.display_name?.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Socket.IO realtime — listen for new messages + read receipts
+  useEffect(() => {
+    if (!profile) return
+    const sock = getSocket()
+    if (!sock) return
+
+    const onNew = (msg) => {
+      const iAmRecipient = msg.receiverId === profile.id
+      const iAmSender = msg.senderId === profile.id
+      const partnerId = iAmRecipient ? msg.senderId : msg.receiverId
+      const activePartner = activeConvo?.partner?.id
+      const inActiveConvo = activePartner && partnerId === activePartner
+
+      if (inActiveConvo) {
+        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
+        setTimeout(scrollToBottom, 50)
+        // Mark this new message as read immediately since user is looking at it
+        if (iAmRecipient) messageApi.markRead(partnerId).catch(() => {})
+      }
+      // Refresh conversation list (updates last message + unread counts)
+      fetchConversations()
+      void iAmSender
+    }
+
+    const onRead = () => {
+      // Conversation list updates unread counters on re-fetch
+      fetchConversations()
+    }
+
+    sock.on('message:new', onNew)
+    sock.on('message:read', onRead)
+    return () => {
+      sock.off('message:new', onNew)
+      sock.off('message:read', onRead)
+    }
+  }, [profile?.id, activeConvo?.partner?.id])
+
+  const filtered = conversations.filter(c => c.partner.displayName?.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const quota = subInfo?.dailyMessageQuota
+  const showQuotaBanner = subInfo && !subInfo.unlimitedMessages && quota
+  const bannerTone = quota && quota.remaining === 0 ? 'danger' : 'info'
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 py-5">
+      {showQuotaBanner && (
+        <div className={`mb-3 flex items-center gap-3 px-4 py-3 rounded-xl border
+          ${bannerTone === 'danger'
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" strokeWidth={2.5} />
+          <div className="flex-1 text-[12.5px] font-semibold">
+            {bannerTone === 'danger'
+              ? 'Daily message limit reached.'
+              : `${quota.remaining} of ${quota.limit} messages left today on the Free plan.`}
+          </div>
+          <button
+            onClick={() => startUpgrade('pro', 'monthly')}
+            disabled={upgrading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-[11.5px] font-bold rounded-full transition disabled:opacity-50">
+            <Crown className="w-3.5 h-3.5" strokeWidth={2.5} />
+            Upgrade
+          </button>
+          <Link to="/pricing" className="text-[11.5px] font-semibold underline hover:no-underline">See plans</Link>
+        </div>
+      )}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex" style={{ height: 'calc(100dvh - 130px)' }}>
 
         {/* LEFT sidebar */}
@@ -124,17 +204,17 @@ export default function MessagesPage() {
                   className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50
                     ${activeConvo?.partner.id === convo.partner.id ? 'bg-accent-lt border-l-[3px] border-l-accent' : ''}`}>
                   <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm">{initials(convo.partner.display_name)}</div>
-                    {convo.partner.is_live && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-live rounded-full border-2 border-white" />}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm">{initials(convo.partner.displayName)}</div>
+                    {convo.partner.isLive && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-live rounded-full border-2 border-white" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <span className={`text-[13px] truncate ${convo.unread > 0 ? 'font-extrabold' : 'font-semibold'}`}>{convo.partner.display_name}</span>
-                      <span className="text-[10px] text-gray-400 flex-shrink-0 ml-1">{formatDistanceToNow(new Date(convo.lastMessage.created_at))}</span>
+                      <span className={`text-[13px] truncate ${convo.unreadCount > 0 ? 'font-extrabold' : 'font-semibold'}`}>{convo.partner.displayName}</span>
+                      <span className="text-[10px] text-gray-400 flex-shrink-0 ml-1">{convo.lastMessage?.createdAt ? formatDistanceToNow(new Date(convo.lastMessage.createdAt)) : ''}</span>
                     </div>
-                    <div className={`text-[11.5px] truncate ${convo.unread > 0 ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>{convo.lastMessage?.content}</div>
+                    <div className={`text-[11.5px] truncate ${convo.unreadCount > 0 ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>{convo.lastMessage?.content}</div>
                   </div>
-                  {convo.unread > 0 && <div className="w-5 h-5 bg-accent rounded-full text-white text-[9px] font-black flex items-center justify-center flex-shrink-0">{convo.unread}</div>}
+                  {convo.unreadCount > 0 && <div className="w-5 h-5 bg-accent rounded-full text-white text-[9px] font-black flex items-center justify-center flex-shrink-0">{convo.unreadCount}</div>}
                 </div>
               ))}
           </div>
@@ -144,28 +224,28 @@ export default function MessagesPage() {
         {activeConvo ? (
           <div className="flex-1 flex flex-col min-w-0">
             <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm">{initials(activeConvo.partner.display_name)}</div>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm">{initials(activeConvo.partner.displayName)}</div>
               <div>
-                <div className="text-[14px] font-extrabold">{activeConvo.partner.display_name}</div>
-                <div className="text-[11px] text-gray-400">@{activeConvo.partner.handle} {activeConvo.partner.is_live && <span className="text-live font-bold ml-1">● LIVE</span>}</div>
+                <div className="text-[14px] font-extrabold">{activeConvo.partner.displayName}</div>
+                <div className="text-[11px] text-gray-400">@{activeConvo.partner.handle} {activeConvo.partner.isLive && <span className="text-live font-bold ml-1">● LIVE</span>}</div>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
               {messages.length === 0 && (
                 <div className="text-center py-12">
                   <div className="text-3xl mb-2">👋</div>
-                  <div className="text-sm text-gray-400">Say hi to {activeConvo.partner.display_name}!</div>
+                  <div className="text-sm text-gray-400">Say hi to {activeConvo.partner.displayName}!</div>
                 </div>
               )}
               {messages.map(msg => {
-                const isMe = msg.sender_id === profile?.id
+                const isMe = msg.senderId === profile?.id
                 return (
                   <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed
                       ${isMe ? 'bg-accent text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}>
                       {msg.content}
                       <div className={`text-[10px] mt-1 ${isMe ? 'text-white/60' : 'text-gray-400'}`}>
-                        {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
                       </div>
                     </div>
                   </div>
@@ -174,7 +254,7 @@ export default function MessagesPage() {
               <div ref={messagesEndRef} />
             </div>
             <div className="px-4 py-3 border-t border-gray-100 flex gap-2">
-              <input type="text" placeholder={`Message ${activeConvo.partner.display_name}…`}
+              <input type="text" placeholder={`Message ${activeConvo.partner.displayName}…`}
                 className="flex-1 h-10 bg-bg border border-gray-200 rounded-full px-4 text-[13px] outline-none focus:border-accent focus:bg-white transition"
                 value={newMessage} onChange={e => setNewMessage(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendMessage()} />
@@ -207,10 +287,10 @@ export default function MessagesPage() {
               {searchResults.map(p => (
                 <div key={p.id} onClick={() => startNewDM(p)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-xs">{initials(p.display_name)}</div>
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-xs">{initials(p.displayName)}</div>
                   <div>
-                    <div className="text-[13px] font-bold">{p.display_name}</div>
-                    <div className="text-[11px] text-gray-400">@{p.handle} · {p.category}</div>
+                    <div className="text-[13px] font-bold">{p.displayName}</div>
+                    <div className="text-[11px] text-gray-400">@{p.handle}{p.category ? ` · ${p.category}` : ''}</div>
                   </div>
                 </div>
               ))}

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { authApi, companyApi, profileApi } from '@/lib/api'
+import { useAuthStore } from '@/lib/store'
+import ImageUpload from '@/components/ui/ImageUpload'
+import { COUNTRIES } from '@/lib/countries'
 
 const INDUSTRIES = [
   'Esports', 'Gaming Hardware', 'Energy & Beverages', 'Streaming Platform',
@@ -15,24 +18,32 @@ const PARTNERSHIP_TYPES = [
 
 const STEPS = ['Account', 'Company', 'Partnerships', 'Done']
 
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'company'
+}
+
 export default function RegisterCompanyPage() {
   const navigate = useNavigate()
+  const acceptSession = useAuthStore((s) => s.acceptSession)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  const [createdUserId, setCreatedUserId] = useState(null)
 
   const [form, setForm] = useState({
     // Step 1 — Account
     email: '',
     password: '',
+    contact_first_name: '',
+    contact_last_name: '',
     contact_name: '',
     // Step 2 — Company info
     company_name: '',
     industry: '',
     website: '',
+    country: 'TR',
     location: '',
     description: '',
+    logo_url: '',
     // Step 3 — Partnerships
     looking_for: [],
     budget_min: '',
@@ -53,32 +64,40 @@ export default function RegisterCompanyPage() {
     }))
   }
 
-  // STEP 1 — Create auth account
+  // STEP 1 — Create auth account (uses the contact's display_name + a provisional handle)
   const handleStep1 = async (e) => {
     e.preventDefault()
     setErrorMsg('')
-    if (form.password.length < 6) { setErrorMsg('Password must be at least 6 characters'); return }
+    if (form.password.length < 8) { setErrorMsg('Password must be at least 8 characters'); return }
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email.trim(),
-      password: form.password,
-      options: { data: { display_name: form.contact_name, role: 'company' } }
-    })
+    try {
+      // We need a handle at signup time; derive one from the contact name or email.
+      const baseHandle = form.contact_name.replace(/[^a-zA-Z0-9]/g, '') ||
+        (form.email.split('@')[0] || '').replace(/[^a-zA-Z0-9]/g, '') ||
+        'brand'
+      const tentativeHandle = (baseHandle + Date.now().toString(36)).slice(0, 20).toLowerCase()
 
-    if (error) {
-      if (error.message.toLowerCase().includes('already')) {
-        setErrorMsg('This email is already registered. Try signing in.')
-      } else {
-        setErrorMsg(error.message)
-      }
+      const fullName = [form.contact_first_name, form.contact_last_name].filter(Boolean).join(' ').trim()
+      const result = await authApi.signup({
+        email: form.email.trim(),
+        password: form.password,
+        displayName: fullName || form.contact_name.trim() || 'Brand',
+        handle: tentativeHandle,
+        firstName: form.contact_first_name.trim() || null,
+        lastName: form.contact_last_name.trim() || null,
+        country: form.country || undefined,
+        language: 'en',
+        role: 'company',
+      })
+      await acceptSession(result)
+      setStep(2)
+    } catch (err) {
+      if (err.code === 'EMAIL_TAKEN') setErrorMsg('This email is already registered. Try signing in.')
+      else setErrorMsg(err.message || 'Could not create account')
+    } finally {
       setLoading(false)
-      return
     }
-
-    setCreatedUserId(data.user?.id)
-    setLoading(false)
-    setStep(2)
   }
 
   // STEP 2 — Company info (just validate + advance)
@@ -96,41 +115,33 @@ export default function RegisterCompanyPage() {
     setErrorMsg('')
     setLoading(true)
 
-    const userId = createdUserId
-    const slug = form.company_name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
-
     try {
-      // Create company row
-      const { error: companyError } = await supabase.from('companies').insert({
-        owner_id: userId,
+      await companyApi.create({
         name: form.company_name.trim(),
-        slug: slug + '-' + Date.now(),
-        industry: form.industry,
-        website: form.website,
-        description: form.description,
-        looking_for: form.looking_for,
-        is_verified: false,
-        followers_count: 0,
+        slug: slugify(form.company_name),
+        industry: form.industry || null,
+        website: form.website || null,
+        description: form.description || null,
+        lookingFor: form.looking_for,
+        location: form.location || null,
+        logoUrl: form.logo_url || null,
       })
 
-      if (companyError && !companyError.message.includes('duplicate')) {
-        throw companyError
-      }
-
-      // Create a profile row for the company account
-      await supabase.from('profiles').upsert({
-        id: userId,
-        display_name: form.company_name.trim(),
-        handle: slug.slice(0, 30),
-        bio: form.description,
-        category: 'Brand / Company',
-        location: form.location,
-        website: form.website,
-      })
+      // Update the streamer profile we created at signup to look like a brand
+      try {
+        await profileApi.updateMe({
+          displayName: form.company_name.trim(),
+          bio: form.description || null,
+          category: 'Brand / Company',
+          location: form.location || null,
+          website: form.website || null,
+        })
+      } catch { /* non-fatal */ }
 
       setStep(4)
     } catch (err) {
-      setErrorMsg(err.message || 'Something went wrong. Please try again.')
+      if (err.code === 'SLUG_TAKEN') setErrorMsg('A company with that name already exists. Try a different one.')
+      else setErrorMsg(err.message || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }
@@ -144,7 +155,7 @@ export default function RegisterCompanyPage() {
         {/* Logo */}
         <div className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight mb-6">
           <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream<span className="text-accent">Link</span>
+          Stream <span className="text-accent">Link</span>
           <span className="ml-2 text-[11px] bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full">FOR BRANDS</span>
         </div>
 
@@ -176,14 +187,27 @@ export default function RegisterCompanyPage() {
             <h1 className="text-[22px] font-extrabold mb-1">Create brand account</h1>
             <p className="text-sm text-gray-400 mb-5">Connect with thousands of streamers</p>
             <form onSubmit={handleStep1} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Your Name (Contact Person)</label>
-                <input required type="text"
-                  className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
-                  placeholder="John Smith"
-                  value={form.contact_name}
-                  onChange={e => update('contact_name', e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">First name</label>
+                  <input required type="text"
+                    className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                    placeholder="John"
+                    value={form.contact_first_name}
+                    onChange={e => update('contact_first_name', e.target.value)}
+                    autoComplete="given-name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Last name</label>
+                  <input required type="text"
+                    className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                    placeholder="Smith"
+                    value={form.contact_last_name}
+                    onChange={e => update('contact_last_name', e.target.value)}
+                    autoComplete="family-name"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">Work Email</label>
@@ -197,9 +221,9 @@ export default function RegisterCompanyPage() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">Password</label>
-                <input required type="password" minLength={6}
+                <input required type="password" minLength={8}
                   className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   value={form.password}
                   onChange={e => update('password', e.target.value)}
                   autoComplete="new-password"
@@ -240,6 +264,16 @@ export default function RegisterCompanyPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Country</label>
+                  <select
+                    className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                    value={form.country}
+                    onChange={e => update('country', e.target.value)}
+                  >
+                    {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Website</label>
                   <input type="url"
                     className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
@@ -248,15 +282,24 @@ export default function RegisterCompanyPage() {
                     onChange={e => update('website', e.target.value)}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Location</label>
-                  <input type="text"
-                    className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
-                    placeholder="City, Country"
-                    value={form.location}
-                    onChange={e => update('location', e.target.value)}
-                  />
-                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">Company Logo <span className="font-normal text-gray-300">(optional)</span></label>
+                <ImageUpload
+                  kind="company-logo"
+                  value={form.logo_url}
+                  onChange={(url) => update('logo_url', url)}
+                  label="Upload logo"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Location</label>
+                <input type="text"
+                  className="w-full h-11 bg-bg border border-gray-200 rounded-xl px-3 text-sm outline-none focus:border-accent focus:bg-white transition"
+                  placeholder="City, Country"
+                  value={form.location}
+                  onChange={e => update('location', e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">About your brand</label>
