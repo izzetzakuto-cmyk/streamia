@@ -1,14 +1,15 @@
 import './globals.css'
 import SupportFab from '@/components/SupportFab'
-import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from 'next/font/google'
+import { Epilogue, Hanken_Grotesk, JetBrains_Mono } from 'next/font/google'
 
-// Display: editorial serif with optical sizing for hero headlines.
-// Variable font — explicit weight array omitted so all weights are streamed.
-const fontDisplay = Fraunces({
+// Display: Epilogue — modern variable grotesk with true italics for hero
+// headlines. Replaces Fraunces (serif) to better fit the contemporary,
+// creator-focused page. Includes italic for the emphasized hero words.
+const fontDisplay = Epilogue({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',
-  axes: ['opsz'],
+  style: ['normal', 'italic'],
 })
 
 // Body: Hanken Grotesk — characterful neo-grotesque, replaces Plus Jakarta Sans.
@@ -28,39 +29,35 @@ const fontMono = JetBrains_Mono({
 export const metadata = {
   metadataBase: new URL('https://streamia.co'),
   title: {
-    default: 'StreamLink — Professional network for streamers',
+    default: 'StreamLink — The network built for creators, streamers & brands',
     template: '%s · StreamLink',
   },
   description:
-    'StreamLink is the professional home for livestreamers. Connect with top streamers, land brand deals, find collaborators and track your growth.',
+    'StreamLink is the social network where livestreamers, influencers, agencies, and brands connect, showcase achievements, discover opportunities, and build powerful partnerships.',
   applicationName: 'StreamLink',
-  keywords: ['streamers', 'livestream', 'creators', 'twitch', 'kick', 'youtube', 'brand deals', 'influencer'],
+  keywords: ['streamers', 'livestream', 'creators', 'influencers', 'agencies', 'brands', 'twitch', 'kick', 'youtube', 'brand deals', 'collaboration'],
   openGraph: {
-    title: 'StreamLink — Professional network for streamers',
+    title: 'StreamLink — The network built for creators, streamers & brands',
     description:
-      'Connect with top streamers, land brand deals, find collaborators and track your growth — all in one professional network built for creators.',
+      'Connect. Collaborate. Grow. The social network where livestreamers, influencers, agencies, and brands connect, showcase achievements, and build powerful partnerships.',
     url: 'https://streamia.co',
     siteName: 'StreamLink',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'StreamLink — Professional network for streamers',
-    description: 'The professional home for livestreamers. Free forever for creators.',
+    title: 'StreamLink — The network built for creators, streamers & brands',
+    description: 'Connect. Collaborate. Grow. Find your next collaboration, build your reputation, and monetize your audience.',
   },
   icons: {
     icon: [
-      {
-        url:
-          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Crect width='24' height='24' rx='6' fill='%230F172A'/%3E%3Cpath d='M13 3L5 14h5l-1 7 8-11h-5l1-7z' fill='%236C63FF'/%3E%3C/svg%3E",
-        type: 'image/svg+xml',
-      },
+      { url: '/brand/icon.svg', type: 'image/svg+xml' },
     ],
   },
 }
 
 export const viewport = {
-  themeColor: '#6C63FF',
+  themeColor: '#7C3AED',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',

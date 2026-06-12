@@ -11,3 +11,37 @@
     radial-gradient(rgba(10, 10, 10, 0.025) 1px, transparent 1px);
   background-size: 3px 3px;
 }
+
+/* Overlay used on top of .bg-graduate / .bg-graduate-radial avatars so the
+   gradient picks up a little organic dust and doesn't read as flat plastic.
+   Apply the noise via an ::after on the same element (position: relative). */
+.bg-graduate-noisy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: overlay;
+  border-radius: inherit;
+}
+
+/* Subtle 3D tilt + glow under the brand mark (Block E). */
+.logo-3d {
+  transform: perspective(800px) rotateX(8deg);
+  transform-origin: 50% 80%;
+}
+.logo-3d-glow {
+  position: relative;
+}
+.logo-3d-glow::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 209, 122, 0.55) 0%, rgba(229, 91, 208, 0.35) 45%, rgba(157, 107, 255, 0.0) 75%);
+  filter: blur(12px);
+  border-radius: inherit;
+}

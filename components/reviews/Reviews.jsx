@@ -195,7 +195,7 @@ export default function ReviewsPage() {
                 ) : reviews.map((r) => (
                   <div key={r.id} className="px-5 py-4 border-b border-gray-50 last:border-0">
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-xs overflow-hidden flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-xs overflow-hidden flex-shrink-0">
                         {r.reviewer.avatarUrl
                           ? <img src={r.reviewer.avatarUrl} alt="" className="w-full h-full object-cover" />
                           : (r.reviewer.displayName || '??').slice(0, 2).toUpperCase()}

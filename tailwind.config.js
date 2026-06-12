@@ -12,7 +12,7 @@ module.exports = {
         // with Plus Jakarta Sans kept as a fallback so legacy pages don't
         // visually break if a variable fails to load.
         sans: ['var(--font-sans)', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        display: ['var(--font-display)', 'Georgia', 'Times New Roman', 'serif'],
+        display: ['var(--font-display)', '"Hanken Grotesk"', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       fontSize: {
@@ -35,18 +35,35 @@ module.exports = {
         rule:   '#E6E4DC',
         muted:  '#585650',
         // Existing palette (do not remove — used across login/pricing/feed/etc.):
-        accent: '#6C63FF',
-        'accent-lt': '#f0efff',
-        'accent-dk': '#5a52e0',
+        // Graduation purple ("saf mor") — single accent, not the logo gradient.
+        accent: '#7C3AED',
+        'accent-lt': '#EDE9FE',
+        'accent-dk': '#6D28D9',
+        // Pink-purple accent for hover states + focus rings (PDF "pembe-mor" brief).
+        'accent-pink': '#C026D3',
         live: '#e63946',
         twitch: '#9146FF',
         kick: '#2ea04a',
         youtube: '#cc0000',
         bg: '#f3f2ef',
       },
+      backgroundImage: {
+        // Warm sunset iridescent — default avatar fallback + "graduate" brand moments.
+        // Matches WhatsApp reference image 1 (yellow → coral → magenta → violet).
+        'graduate':
+          'conic-gradient(from 220deg at 30% 30%, #FFD66B 0deg, #FFB199 70deg, #FF8FA3 140deg, #E55BD0 210deg, #9D6BFF 280deg, #FFD66B 360deg)',
+        'graduate-radial':
+          'radial-gradient(circle at 30% 30%, #FFE07A 0%, #FFB199 22%, #FF8FA3 40%, #E55BD0 60%, #9D6BFF 90%)',
+        // Soft pastel cool — hero banners + decorative banners.
+        // Matches WhatsApp reference image 2 (cream → pink → peach → lavender).
+        'aurora':
+          'radial-gradient(circle at 60% 30%, #DCE9FF 0%, #FFD4D8 35%, #FFB199 55%, #E9D4FF 80%)',
+      },
       boxShadow: {
         // Single soft shadow token — replaces ad-hoc shadow-[0_4px_...] across page.jsx.
         card: '0 1px 0 rgba(10,10,10,0.04), 0 8px 28px -16px rgba(10,10,10,0.10)',
+        // Subtle outer glow used under the brand mark for a "3D" feel.
+        'graduate-glow': '0 12px 32px -8px rgba(229,91,208,0.35), 0 8px 24px -12px rgba(157,107,255,0.30)',
       },
     },
   },

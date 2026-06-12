@@ -205,7 +205,7 @@ export default function MessagesPage() {
                   className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50
                     ${activeConvo?.partner.id === convo.partner.id ? 'bg-accent-lt border-l-[3px] border-l-accent' : ''}`}>
                   <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm">{initials(convo.partner.displayName)}</div>
+                    <div className="w-10 h-10 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-sm">{initials(convo.partner.displayName)}</div>
                     {convo.partner.isLive && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-live rounded-full border-2 border-white" />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export default function MessagesPage() {
         {activeConvo ? (
           <div className="flex-1 flex flex-col min-w-0">
             <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm">{initials(activeConvo.partner.displayName)}</div>
+              <div className="w-9 h-9 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-sm">{initials(activeConvo.partner.displayName)}</div>
               <div>
                 <div className="text-[14px] font-extrabold">{activeConvo.partner.displayName}</div>
                 <div className="text-[11px] text-gray-400">@{activeConvo.partner.handle} {activeConvo.partner.isLive && <span className="text-live font-bold ml-1">● LIVE</span>}</div>
@@ -288,7 +288,7 @@ export default function MessagesPage() {
               {searchResults.map(p => (
                 <div key={p.id} onClick={() => startNewDM(p)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-xs">{initials(p.displayName)}</div>
+                  <div className="w-9 h-9 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-xs">{initials(p.displayName)}</div>
                   <div>
                     <div className="text-[13px] font-bold">{p.displayName}</div>
                     <div className="text-[11px] text-gray-400">@{p.handle}{p.category ? ` · ${p.category}` : ''}</div>

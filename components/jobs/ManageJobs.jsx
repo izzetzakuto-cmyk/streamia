@@ -378,7 +378,7 @@ function ApplicationsModal({ job, onClose, showToast }) {
           ) : list.map((a) => (
             <div key={a.id} className="px-5 py-4 border-b border-gray-50 last:border-0">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 text-white font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-graduate-radial text-white font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
                   {a.applicant.avatarUrl
                     ? <img src={a.applicant.avatarUrl} alt="" className="w-full h-full object-cover" />
                     : (a.applicant.displayName || '??').slice(0, 2).toUpperCase()}

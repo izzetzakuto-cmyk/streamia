@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   BarChart3, Bell, Briefcase, Building2, Crown, Gem, Home, LogOut,
-  MessageSquare, Search, Settings, ShieldCheck, Star, Trophy, User, Users, Zap,
+  MessageSquare, Search, Settings, ShieldCheck, Star, Trophy, User, Users,
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
 import Toast from '@/components/Toast'
@@ -55,11 +55,8 @@ export default function AppShell({ me, children }) {
     <>
       {/* Desktop nav */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200 h-14 hidden md:flex items-center px-4 gap-2">
-        <Link href="/feed" className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight flex-shrink-0">
-          <span className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white">
-            <Zap className="w-4 h-4" strokeWidth={2.5} />
-          </span>
-          Stream<span className="text-accent">Link</span>
+        <Link href="/feed" aria-label="StreamLink — feed" className="flex items-center flex-shrink-0">
+          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-6 w-auto" />
         </Link>
 
         <div className="relative flex-1 max-w-[240px] ml-2">
@@ -90,7 +87,7 @@ export default function AppShell({ me, children }) {
           <div className="relative ml-1">
             <button
               onClick={() => setShowMenu((v) => !v)}
-              className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white text-[11.5px] font-extrabold overflow-hidden">
+              className="w-9 h-9 rounded-full bg-graduate-radial flex items-center justify-center text-white text-[11.5px] font-extrabold overflow-hidden">
               {profile?.avatarUrl
                 // eslint-disable-next-line @next/next/no-img-element
                 ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -119,11 +116,8 @@ export default function AppShell({ me, children }) {
 
       {/* Mobile shrunk top bar */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200 h-12 flex md:hidden items-center px-3 gap-2">
-        <Link href="/feed" className="flex items-center gap-2 text-[15px] font-extrabold tracking-tight">
-          <span className="w-7 h-7 bg-gray-900 rounded-lg flex items-center justify-center text-white">
-            <Zap className="w-3.5 h-3.5" strokeWidth={2.5} />
-          </span>
-          Stream<span className="text-accent">Link</span>
+        <Link href="/feed" aria-label="StreamLink — feed" className="flex items-center">
+          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-5 w-auto" />
         </Link>
         <button onClick={signOut} className="ml-auto text-[11.5px] font-semibold text-gray-500">Sign out</button>
       </nav>

@@ -183,7 +183,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
 
       {/* Profile card */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-4">
-        <div className="relative h-44 bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 group/banner">
+        <div className="relative h-44 bg-aurora group/banner">
           {profile.bannerUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={profile.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -204,7 +204,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
         <div className="px-6 pb-5">
           <div className="flex items-end justify-between -mt-10 mb-4">
             <div className="relative group/avatar">
-              <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-extrabold text-2xl">
+              <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden bg-graduate-radial flex items-center justify-center text-white font-extrabold text-2xl">
                 {profile.avatarUrl
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -420,7 +420,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
               ) : connectionsList.map(({ connectionId, profile: p }) => (
                 <Link key={connectionId} href={`/profile/${p.id}`} onClick={() => setShowConnections(false)}
                   className="flex items-center gap-3 px-5 py-3 border-b border-gray-50 hover:bg-gray-50 transition">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 text-white font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-graduate-radial text-white font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
                     {p.avatarUrl
                       // eslint-disable-next-line @next/next/no-img-element
                       ? <img src={p.avatarUrl} alt="" className="w-full h-full object-cover" />

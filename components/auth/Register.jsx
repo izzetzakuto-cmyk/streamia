@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Link, useNavigate } from '@/lib/router-shim'
-import { ArrowRight, Building2, Loader2, Sparkles, Tv, Zap } from 'lucide-react'
+import { ArrowRight, Building2, Loader2, Sparkles, Tv } from 'lucide-react'
 import { authApi, profileApi } from '@/lib/api-client'
 import { useAuthStore } from '@/lib/store'
 import PlatformPicker from '@/components/PlatformPicker'
@@ -107,11 +107,8 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
-          <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-            <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">
-              <Zap className="w-4 h-4" strokeWidth={2.5} />
-            </div>
-            Stream<span className="text-accent">Link</span>
+          <div className="mb-6">
+            <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-7 w-auto" />
           </div>
           <h1 className="text-[22px] font-extrabold mb-1">Join StreamLink</h1>
           <p className="text-sm text-gray-400 mb-6">How do you want to use StreamLink?</p>
@@ -120,7 +117,7 @@ export default function RegisterPage() {
             <button onClick={() => setAccountType('streamer')}
               className="w-full p-4 border-2 border-gray-200 hover:border-accent hover:bg-accent-lt rounded-2xl text-left transition group">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-accent to-purple-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 bg-graduate-radial rounded-xl flex items-center justify-center flex-shrink-0">
                   <Tv className="w-6 h-6 text-white" strokeWidth={2.25} />
                 </div>
                 <div className="flex-1">
@@ -181,11 +178,8 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
-        <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-5">
-          <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">
-            <Zap className="w-4 h-4" strokeWidth={2.5} />
-          </div>
-          Stream<span className="text-accent">Link</span>
+        <div className="mb-5">
+          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-7 w-auto" />
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">Create your profile</h1>
@@ -354,7 +348,7 @@ export default function RegisterPage() {
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition mt-1 disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full h-11 bg-accent hover:bg-accent-pink focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition mt-1 disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

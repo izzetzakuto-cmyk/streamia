@@ -167,10 +167,9 @@ export default function RegisterCompanyPage() {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-md p-8">
 
         {/* Logo */}
-        <div className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight mb-6">
-          <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream <span className="text-accent">Link</span>
-          <span className="ml-2 text-[11px] bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full">FOR BRANDS</span>
+        <div className="flex items-center gap-2 mb-6">
+          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-7 w-auto" />
+          <span className="text-[11px] bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full">FOR BRANDS</span>
         </div>
 
         {/* Step indicator */}
@@ -305,7 +304,7 @@ export default function RegisterCompanyPage() {
                 />
               </div>
               <button type="submit" disabled={loading}
-                className="w-full h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
+                className="w-full h-11 bg-accent hover:bg-accent-pink focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
                 {loading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Creating…</> : 'Continue →'}
               </button>
             </form>
@@ -389,7 +388,7 @@ export default function RegisterCompanyPage() {
                 <button type="button" onClick={() => setStep(1)}
                   className="flex-1 h-11 border border-gray-200 text-gray-500 font-bold rounded-full text-sm hover:border-gray-400 transition">← Back</button>
                 <button type="submit"
-                  className="flex-1 h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition">Continue →</button>
+                  className="flex-1 h-11 bg-accent hover:bg-accent-pink focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition">Continue →</button>
               </div>
             </form>
           </>
@@ -446,7 +445,7 @@ export default function RegisterCompanyPage() {
                 <button type="button" onClick={() => setStep(2)}
                   className="flex-1 h-11 border border-gray-200 text-gray-500 font-bold rounded-full text-sm hover:border-gray-400 transition">← Back</button>
                 <button type="submit" disabled={loading}
-                  className="flex-1 h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
+                  className="flex-1 h-11 bg-accent hover:bg-accent-pink focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
                   {loading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving…</> : 'Create Page →'}
                 </button>
               </div>
@@ -477,7 +476,7 @@ export default function RegisterCompanyPage() {
             </div>
 
             <button onClick={goToDashboard}
-              className="w-full h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition">
+              className="w-full h-11 bg-accent hover:bg-accent-pink focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition">
               Go to my brand dashboard →
             </button>
           </div>

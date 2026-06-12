@@ -19,7 +19,7 @@ export default async function MePage() {
           <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           Server-rendered with cookie auth
         </div>
-        <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-extrabold text-2xl shadow-md overflow-hidden mb-3">
+        <div className="w-20 h-20 mx-auto rounded-full bg-graduate-radial flex items-center justify-center text-white font-extrabold text-2xl shadow-md overflow-hidden mb-3">
           {me.profile?.avatarUrl
             ? <img src={me.profile.avatarUrl} alt="" className="w-full h-full object-cover" />
             : initials}

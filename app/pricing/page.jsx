@@ -82,11 +82,8 @@ export default function PricingPage() {
     <main className="min-h-screen bg-white">
       <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto h-16 flex items-center px-6">
-          <Link href="/" className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight">
-            <span className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center text-white">
-              <Zap className="w-4 h-4" strokeWidth={2.5} />
-            </span>
-            Stream<span className="text-accent">Link</span>
+          <Link href="/" className="flex items-center">
+            <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-7 w-auto" />
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/login" className="px-3 py-1.5 text-[13.5px] font-semibold text-gray-600 hover:text-gray-900 transition">Sign in</Link>
@@ -148,11 +145,8 @@ export default function PricingPage() {
 
       <footer className="border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 text-[15px] font-extrabold tracking-tight">
-            <span className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white">
-              <Zap className="w-3.5 h-3.5" strokeWidth={2.5} />
-            </span>
-            Stream<span className="text-accent">Link</span>
+          <Link href="/" className="flex items-center">
+            <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-6 w-auto" />
           </Link>
           <div className="md:ml-auto text-[11.5px] text-gray-400">
             © {new Date().getFullYear()} StreamLink · Built for streamers, by streamers.

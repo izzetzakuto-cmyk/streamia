@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowRight, BadgeCheck, Eye, MapPin, Users, Zap } from 'lucide-react'
+import { ArrowRight, BadgeCheck, Eye, MapPin, Users } from 'lucide-react'
 import { apiServer } from '@/lib/api-server'
 import RoleBadge from '@/components/RoleBadge'
 
@@ -64,11 +64,8 @@ export default async function PublicProfilePage({ params }) {
     <main className="min-h-screen bg-bg">
       <nav className="bg-white/85 backdrop-blur border-b border-gray-100">
         <div className="max-w-3xl mx-auto h-16 flex items-center px-6">
-          <Link href="/" className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight">
-            <span className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center text-white">
-              <Zap className="w-4 h-4" strokeWidth={2.5} />
-            </span>
-            Stream<span className="text-accent">Link</span>
+          <Link href="/" className="flex items-center">
+            <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-7 w-auto" />
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/login" className="px-3 py-1.5 text-[13.5px] font-semibold text-gray-600 hover:text-gray-900 transition">Sign in</Link>
@@ -81,7 +78,7 @@ export default async function PublicProfilePage({ params }) {
 
       <article className="max-w-3xl mx-auto px-4 py-6">
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="relative h-44 bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200">
+          <div className="relative h-44 bg-aurora">
             {profile.bannerUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={profile.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -89,7 +86,7 @@ export default async function PublicProfilePage({ params }) {
           </div>
           <div className="px-6 pb-6">
             <div className="-mt-10 mb-3">
-              <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-extrabold text-2xl">
+              <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden bg-graduate-radial flex items-center justify-center text-white font-extrabold text-2xl">
                 {profile.avatarUrl
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />

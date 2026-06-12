@@ -67,7 +67,7 @@ export default function NotificationsPage() {
             return (
               <div key={n.id} className={`flex items-start gap-3 px-5 py-4 border-b border-gray-50 last:border-0 ${n.readAt ? '' : 'bg-accent-lt/30'}`}>
                 <div className="relative flex-shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 text-white font-bold text-xs flex items-center justify-center overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-graduate-radial text-white font-bold text-xs flex items-center justify-center overflow-hidden">
                     {n.actor?.avatarUrl
                       ? <img src={n.actor.avatarUrl} alt="" className="w-full h-full object-cover" />
                       : name.slice(0, 2).toUpperCase()}

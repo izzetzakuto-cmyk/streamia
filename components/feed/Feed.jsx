@@ -101,7 +101,7 @@ function Composer() {
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
       <div className="flex gap-3 items-start mb-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
+        <div className="w-10 h-10 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
           {profile?.avatarUrl
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -187,7 +187,7 @@ function PostCard({ post }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition">
       <div className="flex gap-3 p-4 pb-0 items-start">
-        <Link href={`/profile/${post.author?.id}`} className="w-11 h-11 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden hover:opacity-80 transition">
+        <Link href={`/profile/${post.author?.id}`} className="w-11 h-11 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden hover:opacity-80 transition">
           {post.author?.avatarUrl
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={post.author.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -291,7 +291,7 @@ function CommentSection({ postId, me, onCountChange }) {
         <div className="space-y-2.5 mb-3">
           {items.map((c) => (
             <div key={c.id} className="flex items-start gap-2.5">
-              <Link href={`/profile/${c.author?.id}`} className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 overflow-hidden">
+              <Link href={`/profile/${c.author?.id}`} className="w-7 h-7 rounded-full bg-graduate-radial flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 overflow-hidden">
                 {c.author?.avatarUrl
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={c.author.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -316,7 +316,7 @@ function CommentSection({ postId, me, onCountChange }) {
         </div>
       )}
       <div className="flex items-end gap-2">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 overflow-hidden">
+        <div className="w-7 h-7 rounded-full bg-graduate-radial flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 overflow-hidden">
           {me?.avatarUrl
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={me.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -361,7 +361,7 @@ function LikesModal({ postId, onClose }) {
           {likers && likers.length === 0 && <div className="text-center py-6 text-sm text-gray-400">No likes yet</div>}
           {likers && likers.map((p) => (
             <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-xs overflow-hidden">
+              <div className="w-9 h-9 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-xs overflow-hidden">
                 {p.avatarUrl
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={p.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -387,7 +387,7 @@ function ProfileSidebar({ profile }) {
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
       <div className="h-14 bg-gradient-to-r from-accent/20 to-purple-100" />
       <div className="px-4 pb-4">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-purple-400 border-4 border-white -mt-7 flex items-center justify-center text-white font-extrabold text-lg overflow-hidden mb-2">
+        <div className="w-14 h-14 rounded-full bg-graduate-radial border-4 border-white -mt-7 flex items-center justify-center text-white font-extrabold text-lg overflow-hidden mb-2">
           {profile.avatarUrl
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />

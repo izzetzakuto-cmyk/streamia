@@ -47,9 +47,8 @@ export default function ResetPasswordPage() {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
 
         {/* Logo */}
-        <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-          <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream <span className="text-accent">Link</span>
+        <div className="mb-6">
+          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-7 w-auto" />
         </div>
 
         {!ready ? (
@@ -100,7 +99,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !password || !confirm || password !== confirm}
-                className="w-full h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full h-11 bg-accent hover:bg-accent-pink focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

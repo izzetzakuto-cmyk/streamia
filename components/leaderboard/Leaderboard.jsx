@@ -112,7 +112,7 @@ export default function LeaderboardPage() {
                 className={`flex items-center gap-4 px-5 py-4 ${i !== data.items.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 transition`}>
                 {rankBadge(entry.rank)}
                 <Link to={`/profile/${entry.profile.id}`} className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0 overflow-hidden">
+                  <div className="w-11 h-11 rounded-full bg-graduate-radial flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0 overflow-hidden">
                     {entry.profile.avatarUrl
                       ? <img src={entry.profile.avatarUrl} alt="" className="w-full h-full object-cover" />
                       : (entry.profile.displayName || '??').slice(0, 2).toUpperCase()}

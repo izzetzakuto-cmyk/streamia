@@ -115,7 +115,7 @@ export default function ProfileViewsPage() {
               <div key={row.id} className="flex items-center gap-3 px-5 py-3 border-b border-gray-50 last:border-0">
                 {row.viewer ? (
                   <Link to={`/profile/${row.viewer.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-purple-400 text-white font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-graduate-radial text-white font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
                       {row.viewer.avatarUrl
                         ? <img src={row.viewer.avatarUrl} alt="" className="w-full h-full object-cover" />
                         : (row.viewer.displayName || '??').slice(0, 2).toUpperCase()}

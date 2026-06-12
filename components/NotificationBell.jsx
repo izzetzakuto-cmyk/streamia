@@ -108,7 +108,7 @@ export default function NotificationBell() {
               return (
                 <div key={n.id} className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-0 ${n.readAt ? '' : 'bg-accent-lt/40'}`}>
                   <div className="relative flex-shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-purple-400 text-white font-bold text-[10px] flex items-center justify-center overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-graduate-radial text-white font-bold text-[10px] flex items-center justify-center overflow-hidden">
                       {n.actor?.avatarUrl
                         ? <img src={n.actor.avatarUrl} alt="" className="w-full h-full object-cover" />
                         : name.slice(0, 2).toUpperCase()}

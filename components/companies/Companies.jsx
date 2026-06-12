@@ -316,7 +316,7 @@ export default function CompaniesPage() {
                           <div className="space-y-3">
                             {reviewData.reviews.map((r) => (
                               <div key={r.id} className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-white font-bold text-[10px] overflow-hidden flex-shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-[10px] overflow-hidden flex-shrink-0">
                                   {r.reviewer.avatarUrl
                                     ? <img src={r.reviewer.avatarUrl} alt="" className="w-full h-full object-cover" />
                                     : (r.reviewer.displayName || '??').slice(0, 2).toUpperCase()}

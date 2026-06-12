@@ -6,7 +6,11 @@ import { useAuthStore, useAppStore } from '@/lib/store'
 
 const TABS = ['Suggestions', 'Requests', 'Connections', 'Following']
 const initials = (name) => name?.slice(0, 2).toUpperCase() || '??'
-const gradients = ['from-accent to-purple-400','from-pink-500 to-rose-500','from-yellow-400 to-amber-500','from-green-500 to-emerald-600','from-cyan-500 to-blue-500','from-orange-500 to-red-500']
+// Decorative gradients for suggestion cards. First slot is the brand
+// iridescent (rendered via `bg-graduate-radial`); the rest stay varied so
+// the wall reads playful rather than monotone.
+const gradients = ['graduate','from-pink-500 to-rose-500','from-yellow-400 to-amber-500','from-green-500 to-emerald-600','from-cyan-500 to-blue-500','from-orange-500 to-red-500']
+const gradientClass = (key) => key === 'graduate' ? 'bg-graduate-radial' : `bg-gradient-to-br ${key}`
 
 export default function Network() {
   const { profile } = useAuthStore()
@@ -122,9 +126,9 @@ export default function Network() {
                   {suggestions.length === 0 && <div className="col-span-3 text-center py-12 text-gray-400">No suggestions right now</div>}
                   {suggestions.map((p, i) => (
                     <div key={p.id} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
-                      <div className={`h-14 bg-gradient-to-r ${gradients[i % gradients.length]} opacity-20`} />
+                      <div className={`h-14 ${gradientClass(gradients[i % gradients.length])} opacity-20`} />
                       <div className="px-4 pb-4">
-                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-extrabold -mt-6 border-[3px] border-white mb-2`}>
+                        <div className={`w-12 h-12 rounded-full ${gradientClass(gradients[i % gradients.length])} flex items-center justify-center text-white font-extrabold -mt-6 border-[3px] border-white mb-2`}>
                           {initials(p.displayName)}
                         </div>
                         <div className="font-bold text-[13.5px]">{p.displayName}</div>
@@ -162,7 +166,7 @@ export default function Network() {
                   )}
                   {requests.map((req, i) => (
                     <div key={req.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition">
-                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-extrabold flex-shrink-0`}>
+                      <div className={`w-12 h-12 rounded-full ${gradientClass(gradients[i % gradients.length])} flex items-center justify-center text-white font-extrabold flex-shrink-0`}>
                         {initials(req.otherUser?.displayName)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -196,7 +200,7 @@ export default function Network() {
                     if (!partner) return null
                     return (
                       <div key={conn.id} className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition">
-                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                        <div className={`w-10 h-10 rounded-full ${gradientClass(gradients[i % gradients.length])} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
                           {initials(partner.displayName)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -225,7 +229,7 @@ export default function Network() {
                   {following.map((f, i) => (
                     <div key={f.id} className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition">
                       <div className="relative flex-shrink-0">
-                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center text-white font-bold text-sm`}>
+                        <div className={`w-10 h-10 rounded-full ${gradientClass(gradients[i % gradients.length])} flex items-center justify-center text-white font-bold text-sm`}>
                           {initials(f.displayName)}
                         </div>
                         {f.isLive && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-live rounded-full border-2 border-white" />}

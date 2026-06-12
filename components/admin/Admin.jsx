@@ -166,7 +166,7 @@ function UsersTab({ showToast }) {
                   <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-purple-400 text-white font-bold text-[10px] flex items-center justify-center overflow-hidden">
+                        <div className="w-7 h-7 rounded-full bg-graduate-radial text-white font-bold text-[10px] flex items-center justify-center overflow-hidden">
                           {u.profile?.avatarUrl
                             ? <img src={u.profile.avatarUrl} alt="" className="w-full h-full object-cover" />
                             : (u.profile?.displayName || '??').slice(0, 2).toUpperCase()}
