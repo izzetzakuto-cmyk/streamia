@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  BarChart3, Bell, Briefcase, Building2, Crown, Gem, Home, LogOut,
+  BarChart3, Bell, Briefcase, Building2, Crown, Gem, Home, Loader2, LogOut,
   MessageSquare, Search, Settings, ShieldCheck, Star, Trophy, User, Users,
 } from 'lucide-react'
+import { profileApi } from '@/lib/api-client'
 import { useAuthStore } from '@/lib/store'
 import Toast from '@/components/Toast'
 import NotificationBell from '@/components/NotificationBell'
@@ -34,6 +35,42 @@ export default function AppShell({ me, children }) {
   // every page below doesn't have to re-fetch /auth/me.
   useEffect(() => { hydrate(me) }, [hydrate, me])
 
+  // ── Block E — functional nav search ──
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+  const searchWrapRef = useRef(null)
+
+  useEffect(() => {
+    if (q.trim().length < 2) { setResults([]); return }
+    let cancelled = false
+    setSearching(true)
+    const handle = setTimeout(async () => {
+      try {
+        const list = await profileApi.search(q.trim(), 6)
+        if (!cancelled) setResults(list || [])
+      } catch {
+        if (!cancelled) setResults([])
+      } finally {
+        if (!cancelled) setSearching(false)
+      }
+    }, 220) // debounce
+    return () => { cancelled = true; clearTimeout(handle) }
+  }, [q])
+
+  // Close dropdown on outside-click.
+  useEffect(() => {
+    if (!showSearchDropdown) return
+    const onClick = (e) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) {
+        setShowSearchDropdown(false)
+      }
+    }
+    window.addEventListener('mousedown', onClick)
+    return () => window.removeEventListener('mousedown', onClick)
+  }, [showSearchDropdown])
+
   const profile = me?.profile
   const initials = (profile?.displayName || me?.email || '??').slice(0, 2).toUpperCase()
   const isAdmin = me?.role === 'admin'
@@ -55,14 +92,59 @@ export default function AppShell({ me, children }) {
     <>
       {/* Desktop nav */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200 h-14 hidden md:flex items-center px-4 gap-2">
-        <Link href="/feed" aria-label="StreamLink — feed" className="flex items-center flex-shrink-0">
-          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-6 w-auto" />
+        <Link href="/feed" aria-label="StreamLink — feed" className="flex items-center flex-shrink-0 logo-3d-glow">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-6 w-auto logo-3d" />
         </Link>
 
-        <div className="relative flex-1 max-w-[240px] ml-2">
+        <div className="relative flex-1 max-w-[260px] ml-2" ref={searchWrapRef}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" strokeWidth={2.25} />
-          <input type="text" placeholder="Search…"
-            className="w-full h-[34px] bg-bg border border-transparent rounded-full pl-8 pr-3 text-[13px] outline-none focus:bg-white focus:border-accent transition" />
+          <input
+            type="text"
+            placeholder="Search creators…"
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setShowSearchDropdown(true) }}
+            onFocus={() => setShowSearchDropdown(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setShowSearchDropdown(false); setQ('') }
+              if (e.key === 'Enter' && results[0]) { router.push(`/profile/${results[0].id}`); setShowSearchDropdown(false); setQ('') }
+            }}
+            className="w-full h-[34px] bg-bg border border-transparent rounded-full pl-8 pr-3 text-[13px] outline-none focus:bg-white focus:border-accent transition"
+          />
+          {showSearchDropdown && q.trim().length >= 2 && (
+            <div className="absolute left-0 right-0 top-[42px] bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+              {searching && (
+                <div className="flex items-center justify-center py-4 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2.5} />
+                </div>
+              )}
+              {!searching && results.length === 0 && (
+                <div className="text-center py-4 text-[12px] text-gray-400">No matches.</div>
+              )}
+              {!searching && results.map((p) => {
+                const initials = (p.displayName || '??').slice(0, 2).toUpperCase()
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/profile/${p.id}`}
+                    onClick={() => { setShowSearchDropdown(false); setQ('') }}
+                    className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 transition"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-graduate-radial flex items-center justify-center text-white text-[10px] font-bold overflow-hidden">
+                      {p.avatarUrl
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={p.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        : initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12.5px] font-extrabold truncate">{p.displayName}</div>
+                      <div className="text-[10.5px] text-gray-400 truncate">@{p.handle}{p.category ? ` · ${p.category}` : ''}</div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-px ml-auto">
