@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "next-dev-v20",
+      "runtimeExecutable": "/Users/osmanceyhan/.nvm/versions/node/v20.17.0/bin/node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "autoPort": true,
+      "port": 3100
+    }
+  ]
+}
