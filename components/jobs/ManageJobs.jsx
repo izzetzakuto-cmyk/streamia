@@ -212,13 +212,21 @@ export default function ManageJobsPage() {
   )
 }
 
+// Faz 8 Block D — paid listings.
+const DURATION_OPTIONS = [
+  { days: 7,  price: 29, label: '7 days' },
+  { days: 14, price: 49, label: '14 days' },
+  { days: 30, price: 79, label: '30 days' },
+]
+
 function NewJobModal({ company, onClose, onCreated, showToast }) {
   const [form, setForm] = useState({
     title: '', description: '',
     jobType: '', category: '', platform: '',
     payMin: '', payMax: '', payPeriod: 'month',
     requirements: [], reqInput: '',
-    isActive: true,
+    isActive: false, // listing only goes live AFTER Stripe confirms payment
+    durationDays: 7,
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -232,7 +240,9 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await jobApi.create({
+      // 1) Create the job in `unpaid` state. isActive stays false until the
+      //    Stripe webhook flips both `payment_status='paid'` and isActive=true.
+      const created = await jobApi.create({
         companyId: company.id,
         title: form.title.trim(),
         description: form.description || null,
@@ -243,14 +253,20 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
         payMax: form.payMax ? Number(form.payMax) : null,
         payPeriod: form.payPeriod || null,
         requirements: form.requirements.length ? form.requirements : null,
-        isActive: form.isActive,
+        isActive: false,
       })
-      showToast('Job posted')
-      onCreated()
+      // 2) Kick off Stripe Checkout for the chosen duration.
+      const { url } = await jobApi.checkout(created.id, form.durationDays)
+      if (!url) {
+        showToast('Stripe checkout temporarily unavailable. Please try again.', 'error')
+        setSubmitting(false)
+        return
+      }
+      window.location.href = url
     } catch (err) {
       showToast(err.message || 'Failed', 'error')
+      setSubmitting(false)
     }
-    setSubmitting(false)
   }
 
   return (
@@ -331,19 +347,33 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
             </div>
           </Field>
           <div className="pt-2">
-            <label className="inline-flex items-center gap-2 text-[12.5px] font-semibold">
-              <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                className="w-4 h-4" />
-              Publish immediately
-            </label>
+            <div className="text-[11.5px] font-extrabold uppercase tracking-wider text-gray-500 mb-2">Listing duration</div>
+            <div className="grid grid-cols-3 gap-2">
+              {DURATION_OPTIONS.map((opt) => {
+                const active = form.durationDays === opt.days
+                return (
+                  <button key={opt.days} type="button"
+                    onClick={() => setForm({ ...form, durationDays: opt.days })}
+                    className={`flex flex-col items-center justify-center rounded-xl border-2 p-3 text-center transition
+                      ${active ? 'border-accent bg-accent-lt' : 'border-gray-200 hover:border-gray-400'}`}>
+                    <div className="text-[12.5px] font-extrabold uppercase tracking-wider text-gray-500">{opt.label}</div>
+                    <div className="text-[20px] font-extrabold tracking-tight mt-1">${opt.price}</div>
+                    <div className="text-[10.5px] text-gray-400">one-time</div>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-2">
+              Your job goes live as soon as the Stripe payment clears. It auto-expires after the chosen window.
+            </p>
           </div>
           <div className="flex justify-end gap-2 pt-3">
             <button type="button" onClick={onClose}
               className="px-4 h-10 border border-gray-200 text-gray-600 font-bold text-[12.5px] rounded-full">Cancel</button>
             <button type="submit" disabled={!form.title.trim() || submitting}
-              className="inline-flex items-center gap-1.5 px-5 h-10 bg-accent hover:bg-accent-dk text-white font-bold text-[12.5px] rounded-full disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 px-5 h-10 bg-accent hover:bg-accent-pink text-white font-bold text-[12.5px] rounded-full disabled:opacity-50">
               {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2.5} /> : null}
-              Post job
+              Continue to payment
             </button>
           </div>
         </form>

@@ -178,6 +178,11 @@ export default function JobsPage() {
                         <MonitorPlay className="w-3 h-3" strokeWidth={2.5} /> {displaySelected.platform}
                       </span>
                     )}
+                    {displaySelected.expiresAt && (
+                      <span className="inline-flex items-center gap-1 text-[11.5px] bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded-full">
+                        Expires {formatDistanceToNow(new Date(displaySelected.expiresAt), { addSuffix: true })}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
