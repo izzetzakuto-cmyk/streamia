@@ -151,7 +151,8 @@ export default function MessagesPage() {
 
   const filtered = conversations.filter(c => c.partner.displayName?.toLowerCase().includes(searchQuery.toLowerCase()))
 
-  const quota = subInfo?.dailyMessageQuota
+  // monthlyMessageQuota is the Faz 8 field; dailyMessageQuota is the legacy alias.
+  const quota = subInfo?.monthlyMessageQuota ?? subInfo?.dailyMessageQuota
   const showQuotaBanner = subInfo && !subInfo.unlimitedMessages && quota
   const bannerTone = quota && quota.remaining === 0 ? 'danger' : 'info'
 
@@ -165,8 +166,8 @@ export default function MessagesPage() {
           <AlertTriangle className="w-4 h-4 flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1 text-[12.5px] font-semibold">
             {bannerTone === 'danger'
-              ? 'Free plan: you can DM up to 2 new creators per day. Upgrade to message anyone.'
-              : `${quota.remaining} of ${quota.limit} new creators left to DM today on the Free plan.`}
+              ? `Free plan: you can DM up to ${quota?.limit ?? 10} new creators per month. Upgrade to message anyone.`
+              : `${quota.remaining} of ${quota.limit} new creators left to DM this month on the Free plan.`}
           </div>
           <button
             onClick={() => startUpgrade('pro', 'monthly')}
