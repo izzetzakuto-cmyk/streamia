@@ -341,7 +341,13 @@ function PrivacyTab({ showToast, signOut, navigate }) {
       await fetchProfile()
       showToast(next ? 'You will now appear as anonymous when viewing profiles' : 'Your visits will be visible to other users')
     } catch (err) {
-      showToast(err.message || 'Failed', 'error')
+      // Faz 8 Block F — backend gates Silent Mode behind Premium subscription.
+      if (err.code === 'PREMIUM_REQUIRED') {
+        showToast('Silent Mode is a Premium feature. Upgrade to browse anonymously.', 'error')
+        navigate('/pricing')
+      } else {
+        showToast(err.message || 'Failed', 'error')
+      }
     }
     setAnonSaving(false)
   }
@@ -363,10 +369,13 @@ function PrivacyTab({ showToast, signOut, navigate }) {
 
   return (
     <div className="space-y-4">
-      <Card title="Anonymous mode for profile views" hint="When on, other users see 'Anonymous viewer' instead of your name when you visit their profile.">
+      <Card title="Silent Mode — anonymous profile views" hint="When on, other users see 'Anonymous viewer' instead of your name when you visit their profile.">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-bold">Browse anonymously</div>
+            <div className="text-[13px] font-bold inline-flex items-center gap-1.5">
+              Browse anonymously
+              <span className="inline-flex items-center text-[9.5px] font-extrabold tracking-wider text-accent uppercase bg-accent-lt px-1.5 py-px rounded">Premium</span>
+            </div>
             <div className="text-[11.5px] text-gray-400 mt-0.5">{anonymous ? 'You are currently anonymous' : 'Your name appears on profiles you visit'}</div>
           </div>
           <button

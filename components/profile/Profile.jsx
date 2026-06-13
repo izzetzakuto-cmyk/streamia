@@ -4,10 +4,10 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import {
-  BadgeCheck, BarChart3, Camera, Check, Clock, Eye, FileText, Handshake, Heart,
+  BadgeCheck, BarChart3, Bookmark, Camera, Check, Clock, Eye, FileText, Handshake, Heart,
   Loader2, MapPin, MessageCircle, Pencil, Plus, Radio, Rocket, Users, X,
 } from 'lucide-react'
-import { connectionApi, followApi, postApi, profileApi, uploadFile } from '@/lib/api-client'
+import { connectionApi, favoritesApi, followApi, postApi, profileApi, uploadFile } from '@/lib/api-client'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 import RoleBadge from '@/components/RoleBadge'
@@ -84,6 +84,8 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
   const [tab, setTab] = useState('Posts')
   const [isFollowing, setIsFollowing] = useState(Boolean(initialProfile?.isFollowing))
   const [isConnected, setIsConnected] = useState(initialProfile?.connectionStatus === 'accepted')
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favoriteBusy, setFavoriteBusy] = useState(false)
   const [showConnections, setShowConnections] = useState(false)
   const [connectionsList, setConnectionsList] = useState(null)
   const [uploadingBanner, setUploadingBanner] = useState(false)
@@ -93,6 +95,34 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
   const avatarInputRef = useRef(null)
 
   const isOwnProfile = viewingOwn || profile?.id === myProfile?.id
+  const me = useAuthStore((s) => s.user)
+  const isBrandViewer = me?.role === 'company' || me?.role === 'admin'
+
+  // Only company / admin viewers can favourite a creator (Block F).
+  useEffect(() => {
+    if (!isBrandViewer || isOwnProfile || !profile?.id) return
+    let cancelled = false
+    favoritesApi.isFavorited(profile.id)
+      .then((r) => { if (!cancelled) setIsFavorited(Boolean(r?.favorited)) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [isBrandViewer, isOwnProfile, profile?.id])
+
+  const toggleFavorite = async () => {
+    if (favoriteBusy || !profile?.id) return
+    setFavoriteBusy(true)
+    try {
+      if (isFavorited) {
+        await favoritesApi.remove(profile.id); setIsFavorited(false); showToast('Removed from favourites')
+      } else {
+        await favoritesApi.add(profile.id); setIsFavorited(true); showToast('Saved to favourites')
+      }
+    } catch (err) {
+      showToast(err.message || 'Action failed', 'error')
+    } finally {
+      setFavoriteBusy(false)
+    }
+  }
 
   // Record a view (idempotent per day) when looking at someone else's profile.
   useEffect(() => {
@@ -235,6 +265,16 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
                 </button>
               ) : (
                 <>
+                  {isBrandViewer && (
+                    <button onClick={toggleFavorite} disabled={favoriteBusy}
+                      aria-label={isFavorited ? 'Remove from favourites' : 'Save to favourites'}
+                      title={isFavorited ? 'Saved to favourites' : 'Save to favourites'}
+                      className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition disabled:opacity-50
+                        ${isFavorited ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' : 'border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-800'}`}>
+                      {favoriteBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2.5} />
+                        : <Bookmark className="w-3.5 h-3.5" strokeWidth={2.5} fill={isFavorited ? 'currentColor' : 'none'} />}
+                    </button>
+                  )}
                   <button onClick={handleFollow}
                     className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition ${isFollowing ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'border border-accent text-accent hover:bg-accent hover:text-white'}`}>
                     {isFollowing

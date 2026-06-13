@@ -216,11 +216,16 @@ export default function CompaniesPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-[18px] font-extrabold">{selected.name}</h2>
                     {selected.isVerified && (
                       <span className="inline-flex items-center gap-1 text-[10.5px] bg-blue-50 text-blue-600 font-extrabold px-2 py-0.5 rounded-full">
                         <BadgeCheck className="w-3 h-3" fill="currentColor" strokeWidth={0} /> Verified
+                      </span>
+                    )}
+                    {selected.isFeatured && (
+                      <span className="inline-flex items-center gap-1 text-[10.5px] text-amber-700 font-extrabold px-2 py-0.5 rounded-full bg-graduate-radial border border-white/40 shadow-sm">
+                        Featured
                       </span>
                     )}
                   </div>
@@ -367,6 +372,9 @@ export default function CompaniesPage() {
                     <div className="text-[13px] font-bold flex items-center gap-1">
                       <span className="truncate">{c.name}</span>
                       {c.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-sky-500 flex-shrink-0" fill="currentColor" strokeWidth={0} />}
+                      {c.isFeatured && (
+                        <span className="inline-flex items-center text-[9px] font-extrabold text-amber-700 uppercase tracking-wider bg-graduate-radial px-1.5 py-px rounded-full flex-shrink-0 shadow-sm">★</span>
+                      )}
                     </div>
                     <div className="text-[11px] text-gray-400 truncate">{c.industry || '—'}</div>
                   </div>
