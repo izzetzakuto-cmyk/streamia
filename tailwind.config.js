@@ -41,6 +41,10 @@ module.exports = {
         'accent-dk': '#6D28D9',
         // Pink-purple accent for hover states + focus rings (PDF "pembe-mor" brief).
         'accent-pink': '#C026D3',
+        // Lara brand palette (June 2026) — official SVG asset colors.
+        'sl-orange': '#F4622A',
+        'sl-pink':   '#E8347A',
+        'sl-purple': '#7C3AED',
         live: '#e63946',
         twitch: '#9146FF',
         kick: '#2ea04a',
@@ -58,6 +62,9 @@ module.exports = {
         // Matches WhatsApp reference image 2 (cream → pink → peach → lavender).
         'aurora':
           'radial-gradient(circle at 60% 30%, #DCE9FF 0%, #FFD4D8 35%, #FFB199 55%, #E9D4FF 80%)',
+        // Lara's official Streamlink gradient (orange → pink → purple).
+        'streamlink':
+          'linear-gradient(110deg, #F4622A 0%, #E8347A 48%, #7C3AED 100%)',
       },
       boxShadow: {
         // Single soft shadow token — replaces ad-hoc shadow-[0_4px_...] across page.jsx.

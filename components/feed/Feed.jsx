@@ -385,7 +385,7 @@ function ProfileSidebar({ profile }) {
   const initials = profile.displayName?.slice(0, 2).toUpperCase() || '??'
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-      <div className="h-14 bg-gradient-to-r from-accent/20 to-purple-100" />
+      <div className="h-14 bg-aurora opacity-70" />
       <div className="px-4 pb-4">
         <div className="w-14 h-14 rounded-full bg-graduate-radial border-4 border-white -mt-7 flex items-center justify-center text-white font-extrabold text-lg overflow-hidden mb-2">
           {profile.avatarUrl

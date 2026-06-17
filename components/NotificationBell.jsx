@@ -91,7 +91,7 @@ export default function NotificationBell() {
         <div className="absolute right-0 top-11 w-[340px] max-w-[calc(100vw-20px)] bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
           <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
             <span className="text-[13px] font-extrabold">Notifications</span>
-            <Link to="/notifications" onClick={() => setOpen(false)}
+            <Link href="/notifications" onClick={() => setOpen(false)}
               className="text-[11px] font-bold text-accent hover:underline">See all</Link>
           </div>
           <div className="max-h-[60vh] overflow-y-auto">

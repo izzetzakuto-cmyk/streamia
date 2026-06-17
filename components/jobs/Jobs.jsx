@@ -1,76 +1,182 @@
 'use client'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import useSWR from 'swr'
-import { Link } from '@/lib/router-shim'
-import { BadgeDollarSign, Briefcase, Building2, Check, MonitorPlay, X } from 'lucide-react'
+import Link from 'next/link'
+import {
+  Award, BadgeDollarSign, Briefcase, Building2, Check,
+  ChevronDown, DollarSign, MonitorPlay, Search, SlidersHorizontal, X,
+} from 'lucide-react'
 import { jobApi } from '@/lib/api-client'
 import { useAppStore, useAuthStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 import { SkeletonJob } from '@/components/Skeleton'
 
+// ──────────────── Filter dictionaries — single source of truth ────────────────
+// ManageJobs posting form pulls from the same arrays (see ManageJobs.jsx),
+// so the sidebar choices always match what brands picked when posting.
 export const JOB_CATEGORIES = [
-  'Influencer Campaigns',
-  'Affiliate Marketing',
-  'Live Streaming',
-  'Adult Content Operations',
-  'Coin Reseller (Live Apps)',
+  'Brand Collaboration',
+  'Paid Partnership',
+  'UGC Creator',
+  'Sponsored Content',
+  'Affiliate Partner',
+  'Brand Ambassador',
+  'Livestream Host',
+  'Streamer Collaboration',
+  'Influencer Campaign Participant',
+  'Product Reviewer',
+  'Content Creator',
+  'Creator Partnership',
+  'Agency Recruitment',
+  'Event Host',
+  'Livestream Co-Host',
+  'Creator Manager',
+  'Community Manager',
+  'Video Editor',
+  'Social Media Manager',
+  'Cross-Promotion Partner',
 ]
-const CATEGORY_FILTERS = ['All', ...JOB_CATEGORIES]
-const PLATFORMS = ['All', 'Twitch', 'Kick', 'YouTube', 'Multi-Platform']
+export const PLATFORM_OPTIONS = ['Twitch', 'Kick', 'YouTube', 'TikTok', 'Instagram', 'Multi-Platform']
+export const DEAL_TYPES = [
+  { value: 'per-stream', label: 'Per stream' },
+  { value: 'monthly',    label: 'Monthly retainer' },
+  { value: 'revenue',    label: 'Revenue share' },
+  { value: 'one-off',    label: 'One-off' },
+]
+export const EXPERIENCE_LEVELS = [
+  { value: 'beginner',     label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'expert',       label: 'Expert' },
+]
 
-const categoryColors = {
-  'Influencer Campaigns':       'bg-violet-50 text-violet-700',
-  'Affiliate Marketing':        'bg-emerald-50 text-emerald-700',
-  'Live Streaming':             'bg-rose-50 text-rose-700',
-  'Adult Content Operations':   'bg-amber-50 text-amber-700',
-  'Coin Reseller (Live Apps)':  'bg-cyan-50 text-cyan-700',
-}
+const CATEGORY_COLOR_PALETTE = [
+  'bg-violet-50 text-violet-700',
+  'bg-emerald-50 text-emerald-700',
+  'bg-rose-50 text-rose-700',
+  'bg-amber-50 text-amber-700',
+  'bg-cyan-50 text-cyan-700',
+  'bg-sky-50 text-sky-700',
+  'bg-fuchsia-50 text-fuchsia-700',
+  'bg-lime-50 text-lime-700',
+  'bg-orange-50 text-orange-700',
+  'bg-indigo-50 text-indigo-700',
+]
+const categoryColors = Object.fromEntries(
+  JOB_CATEGORIES.map((name, i) => [name, CATEGORY_COLOR_PALETTE[i % CATEGORY_COLOR_PALETTE.length]])
+)
+
+const dealLabel = (v) => DEAL_TYPES.find((d) => d.value === v)?.label || v
+const expLabel  = (v) => EXPERIENCE_LEVELS.find((e) => e.value === v)?.label || v
 
 const payDisplay = (job) => {
-  if (!job.payMin) return 'Negotiable'
-  const fmt = n => n >= 1000 ? `$${(n/1000).toFixed(0)}K` : `$${n}`
-  return `${fmt(job.payMin)}–${fmt(job.payMax)} / ${job.payPeriod}`
+  if (!job.payMin && !job.payMax) return 'Negotiable'
+  const fmt = (n) => (n >= 1000 ? `$${(n / 1000).toFixed(0)}K` : `$${n}`)
+  const period = job.dealType ? dealLabel(job.dealType).toLowerCase() : job.payPeriod
+  if (job.payMin && job.payMax) return `${fmt(job.payMin)}–${fmt(job.payMax)} / ${period}`
+  return `${fmt(job.payMin || job.payMax)} / ${period}`
 }
 
+// ──────────────── Sidebar section (collapsible) ────────────────
+function FilterSection({ icon: Icon, label, open, onToggle, options, value, onChange }) {
+  return (
+    <div className="border-b border-rule last:border-b-0">
+      <button type="button" onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-paper transition">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted uppercase tracking-wider">
+          <Icon className="w-3.5 h-3.5" strokeWidth={2.25} />
+          {label}
+        </span>
+        <ChevronDown className={`w-3.5 h-3.5 text-muted transition ${open ? 'rotate-180' : ''}`} strokeWidth={2.5} />
+      </button>
+      {open && (
+        <div className="px-2.5 pb-2.5 flex flex-col gap-px max-h-[260px] overflow-y-auto">
+          <FilterOption checked={!value} onClick={() => onChange(null)} label="All" />
+          {options.map((opt) => {
+            const v = typeof opt === 'string' ? opt : opt.value
+            const l = typeof opt === 'string' ? opt : opt.label
+            return <FilterOption key={v} checked={value === v} onClick={() => onChange(v)} label={l} />
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FilterOption({ checked, onClick, label }) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] text-left transition select-none
+        ${checked ? 'bg-accent-lt text-accent-dk font-medium' : 'text-muted hover:bg-paper hover:text-ink'}`}>
+      <span className={`w-4 h-4 rounded border-[1.5px] flex-shrink-0 flex items-center justify-center
+        ${checked ? 'bg-accent border-accent text-white' : 'border-gray-300 bg-white'}`}>
+        {checked && <Check className="w-3 h-3" strokeWidth={3} />}
+      </span>
+      {label}
+    </button>
+  )
+}
+
+// ──────────────── Page ────────────────
 export default function JobsPage() {
   const { showToast } = useAppStore()
   const { user } = useAuthStore()
   const isCompany = user?.role === 'company' || user?.role === 'admin'
-  const [categoryFilter, setCategoryFilter] = useState('All')
-  const [platformFilter, setPlatformFilter] = useState('All')
+
+  const [filters, setFilters] = useState({ category: null, platform: null, dealType: null, experienceLevel: null })
+  const [openSec, setOpenSec] = useState({ category: true, platform: true, deal: true, exp: false })
+  const [query, setQuery] = useState('')
+  const [sortVal, setSortVal] = useState('recent')
+
   const [selected, setSelected] = useState(null)
-  const [showApply, setShowApply] = useState(false)
   const [applyMsg, setApplyMsg] = useState('')
   const [applying, setApplying] = useState(false)
   const [applied, setApplied] = useState(new Set())
 
-  // SWR — cached, instant on re-visit
   const { data: dbJobs, isLoading } = useSWR('jobs', async () => {
     const result = await jobApi.list({ isActive: true, limit: 50 })
     return result.items || []
   })
 
-  const jobs = dbJobs || []
-  const filtered = jobs.filter(j => {
-    const catMatch = categoryFilter === 'All' || j.category === categoryFilter
-    const platMatch = platformFilter === 'All' || j.platform === platformFilter
-    return catMatch && platMatch
-  })
+  const filtered = useMemo(() => {
+    const list = (dbJobs || []).filter((j) => {
+      if (filters.category && j.category !== filters.category) return false
+      if (filters.platform && j.platform !== filters.platform) return false
+      if (filters.dealType && j.dealType !== filters.dealType) return false
+      if (filters.experienceLevel && j.experienceLevel !== filters.experienceLevel) return false
+      if (query) {
+        const q = query.toLowerCase()
+        if (!(`${j.title} ${j.company?.name || ''}`.toLowerCase().includes(q))) return false
+      }
+      return true
+    })
+    if (sortVal === 'pay-high') list.sort((a, b) => (b.payMax || b.payMin || 0) - (a.payMax || a.payMin || 0))
+    if (sortVal === 'pay-low')  list.sort((a, b) => (a.payMin || a.payMax || 0) - (b.payMin || b.payMax || 0))
+    return list
+  }, [dbJobs, filters, query, sortVal])
 
-  // Auto-select first job
-  const displaySelected = selected || (filtered.length > 0 ? filtered[0] : null)
+  const activeTags = []
+  if (filters.category)         activeTags.push({ key: 'category',         label: filters.category })
+  if (filters.platform)         activeTags.push({ key: 'platform',         label: filters.platform })
+  if (filters.dealType)         activeTags.push({ key: 'dealType',         label: dealLabel(filters.dealType) })
+  if (filters.experienceLevel)  activeTags.push({ key: 'experienceLevel',  label: expLabel(filters.experienceLevel) })
+
+  const clearAll = () => {
+    setFilters({ category: null, platform: null, dealType: null, experienceLevel: null })
+    setQuery('')
+    setSortVal('recent')
+  }
 
   const handleApply = async () => {
-    if (!applyMsg.trim()) return
+    if (!applyMsg.trim() || !selected) return
     setApplying(true)
     try {
-      await jobApi.apply(displaySelected.id, { message: applyMsg })
-      setApplied(s => new Set([...s, displaySelected.id]))
+      await jobApi.apply(selected.id, { message: applyMsg })
+      setApplied((s) => new Set([...s, selected.id]))
       showToast('Application sent')
-      setShowApply(false); setApplyMsg('')
+      setSelected(null); setApplyMsg('')
     } catch (err) {
       if (err.code === 'ALREADY_APPLIED') {
-        setApplied(s => new Set([...s, displaySelected.id]))
+        setApplied((s) => new Set([...s, selected.id]))
         showToast('You already applied', 'error')
       } else showToast(err.message || 'Could not apply', 'error')
     }
@@ -78,164 +184,220 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 py-5">
-      {isCompany && (
-        <div className="mb-3 flex justify-end">
-          <Link to="/jobs/manage"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-black text-white text-[12.5px] font-bold rounded-full transition">
+    <div className="max-w-[1180px] mx-auto px-4 py-7">
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <h1 className="font-display text-[26px] font-bold text-ink">Jobs</h1>
+          <p className="text-[14px] text-muted mt-0.5">Find brand deals, partnerships, and creator opportunities.</p>
+        </div>
+        {isCompany && (
+          <Link href="/jobs/manage"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-ink hover:bg-black text-white text-[13px] font-semibold rounded-full transition">
             <Briefcase className="w-3.5 h-3.5" strokeWidth={2.5} />
             Manage my jobs
           </Link>
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-4 py-3 mb-4 space-y-2.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-            <Briefcase className="w-3 h-3" strokeWidth={2.5} /> Category
-          </span>
-          {CATEGORY_FILTERS.map(c => (
-            <button key={c} onClick={() => setCategoryFilter(c)}
-              className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition ${categoryFilter === c ? 'bg-accent text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-              {c}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-            <MonitorPlay className="w-3 h-3" strokeWidth={2.5} /> Platform
-          </span>
-          {PLATFORMS.map(p => (
-            <button key={p} onClick={() => setPlatformFilter(p)}
-              className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition ${platformFilter === p ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-4">
-        {/* Jobs list */}
-        <div className="space-y-2">
-          {isLoading
-            ? Array(4).fill(0).map((_, i) => <SkeletonJob key={i} />)
-            : filtered.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-                <Briefcase className="w-8 h-8 text-gray-300 mx-auto mb-2" strokeWidth={1.75} />
-                <div className="font-bold text-gray-600">No jobs match your filters</div>
-                <div className="text-sm text-gray-400 mt-1">Try changing the category or platform.</div>
-              </div>
-            ) : filtered.map(job => (
-              <div key={job.id} onClick={() => setSelected(job)}
-                className={`bg-white border rounded-xl p-4 cursor-pointer hover:shadow-md transition
-                  ${displaySelected?.id === job.id ? 'border-accent shadow-sm ring-1 ring-accent/20' : 'border-gray-200'}`}>
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {job.company?.logoUrl
-                      ? <img src={job.company.logoUrl} alt="" className="w-full h-full object-cover" />
-                      : <Building2 className="w-4 h-4 text-gray-400" strokeWidth={2} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13.5px] font-bold leading-tight mb-1 truncate">{job.title}</div>
-                    <div className="text-[11.5px] text-gray-500 mb-2 truncate">{job.company?.name || 'Brand Partner'}</div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {job.category && <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${categoryColors[job.category] || 'bg-gray-100 text-gray-500'}`}>{job.category}</span>}
-                      <span className="text-[11px] text-accent font-bold">{payDisplay(job)}</span>
-                    </div>
-                  </div>
-                </div>
-                {applied.has(job.id) && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-green-600 font-bold">
-                    <Check className="w-3 h-3" strokeWidth={3} /> Applied
-                  </div>
-                )}
-              </div>
-            ))
-          }
-        </div>
-
-        {/* Job detail */}
-        {displaySelected && (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {displaySelected.company?.logoUrl
-                    ? <img src={displaySelected.company.logoUrl} alt="" className="w-full h-full object-cover" />
-                    : <Building2 className="w-6 h-6 text-gray-400" strokeWidth={1.75} />}
-                </div>
-                <div>
-                  <h2 className="text-[18px] font-extrabold leading-tight mb-1">{displaySelected.title}</h2>
-                  <div className="text-[13px] text-gray-500 font-semibold">{displaySelected.company?.name}</div>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {displaySelected.category && <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${categoryColors[displaySelected.category] || 'bg-gray-100 text-gray-500'}`}>{displaySelected.category}</span>}
-                    <span className="inline-flex items-center gap-1 text-[11.5px] bg-green-50 text-green-700 font-bold px-2.5 py-1 rounded-full">
-                      <BadgeDollarSign className="w-3 h-3" strokeWidth={2.5} /> {payDisplay(displaySelected)}
-                    </span>
-                    {displaySelected.platform && (
-                      <span className="inline-flex items-center gap-1 text-[11.5px] bg-gray-100 text-gray-600 font-semibold px-2.5 py-1 rounded-full">
-                        <MonitorPlay className="w-3 h-3" strokeWidth={2.5} /> {displaySelected.platform}
-                      </span>
-                    )}
-                    {displaySelected.expiresAt && (
-                      <span className="inline-flex items-center gap-1 text-[11.5px] bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded-full">
-                        Expires {formatDistanceToNow(new Date(displaySelected.expiresAt), { addSuffix: true })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="text-[11px] text-gray-400 flex-shrink-0">{formatDistanceToNow(new Date(displaySelected.createdAt), { addSuffix: true })}</div>
-            </div>
-            <p className="text-[13.5px] text-gray-700 leading-relaxed mb-5">{displaySelected.description}</p>
-            {displaySelected.requirements?.length > 0 && (
-              <div className="mb-5">
-                <div className="text-[12px] font-extrabold text-gray-500 uppercase tracking-wider mb-2">Requirements</div>
-                <ul className="space-y-1.5">
-                  {displaySelected.requirements.map((r, i) => (
-                    <li key={i} className="flex items-center gap-2 text-[13px] text-gray-700">
-                      <Check className="w-3.5 h-3.5 text-accent flex-shrink-0" strokeWidth={3} /> {r}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100">
-              {applied.has(displaySelected.id) ? (
-                <div className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-green-50 text-green-700 font-bold rounded-full text-[14px]">
-                  <Check className="w-4 h-4" strokeWidth={3} /> Applied
-                </div>
-              ) : (
-                <button onClick={() => setShowApply(true)} className="px-6 py-2.5 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-[14px] transition">
-                  Apply Now
-                </button>
-              )}
-            </div>
-          </div>
         )}
       </div>
 
-      {/* Apply modal */}
-      {showApply && displaySelected && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowApply(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-[17px] font-extrabold">Apply for Role</h3>
-              <button onClick={() => setShowApply(false)} aria-label="Close" className="text-gray-400 hover:text-gray-700 transition">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-5 items-start">
+        {/* Sidebar */}
+        <aside className="bg-white border border-rule rounded-2xl overflow-hidden md:sticky md:top-20">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-rule">
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+              <SlidersHorizontal className="w-4 h-4 text-sl-purple" strokeWidth={2.25} />
+              Filters
+            </span>
+            <button type="button" onClick={clearAll}
+              className="text-[11px] text-muted hover:text-sl-purple transition">
+              Clear all
+            </button>
+          </div>
+          <FilterSection icon={Briefcase} label="Job type" open={openSec.category}
+            onToggle={() => setOpenSec((s) => ({ ...s, category: !s.category }))}
+            options={JOB_CATEGORIES}
+            value={filters.category}
+            onChange={(v) => setFilters((f) => ({ ...f, category: v }))} />
+          <FilterSection icon={MonitorPlay} label="Platform" open={openSec.platform}
+            onToggle={() => setOpenSec((s) => ({ ...s, platform: !s.platform }))}
+            options={PLATFORM_OPTIONS}
+            value={filters.platform}
+            onChange={(v) => setFilters((f) => ({ ...f, platform: v }))} />
+          <FilterSection icon={DollarSign} label="Deal type" open={openSec.deal}
+            onToggle={() => setOpenSec((s) => ({ ...s, deal: !s.deal }))}
+            options={DEAL_TYPES}
+            value={filters.dealType}
+            onChange={(v) => setFilters((f) => ({ ...f, dealType: v }))} />
+          <FilterSection icon={Award} label="Experience" open={openSec.exp}
+            onToggle={() => setOpenSec((s) => ({ ...s, exp: !s.exp }))}
+            options={EXPERIENCE_LEVELS}
+            value={filters.experienceLevel}
+            onChange={(v) => setFilters((f) => ({ ...f, experienceLevel: v }))} />
+        </aside>
+
+        {/* Main column */}
+        <div className="min-w-0">
+          {/* Search + sort */}
+          <div className="flex flex-wrap items-center gap-2.5 mb-3.5">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" strokeWidth={2.25} />
+              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search jobs or agencies…"
+                className="w-full pl-9 pr-3 py-2.5 bg-white border border-rule rounded-xl text-[14px] outline-none focus:border-sl-purple transition" />
+            </div>
+            <select value={sortVal} onChange={(e) => setSortVal(e.target.value)}
+              className="text-[13px] px-3 py-2.5 bg-white border border-rule rounded-xl outline-none">
+              <option value="recent">Most recent</option>
+              <option value="pay-high">Highest pay</option>
+              <option value="pay-low">Lowest pay</option>
+            </select>
+          </div>
+
+          {/* Active tags */}
+          {activeTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {activeTags.map((t) => (
+                <button key={t.key} onClick={() => setFilters((f) => ({ ...f, [t.key]: null }))}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-lt hover:bg-purple-100 text-accent-dk rounded-full text-[12px] font-medium transition">
+                  {t.label}
+                  <X className="w-3 h-3" strokeWidth={2.5} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Result count */}
+          <div className="text-[13px] text-muted mb-3.5">
+            <strong className="text-ink">{filtered.length}</strong> job{filtered.length === 1 ? '' : 's'} found
+          </div>
+
+          {/* Cards */}
+          <div className="flex flex-col gap-2.5">
+            {isLoading ? (
+              Array(4).fill(0).map((_, i) => <SkeletonJob key={i} />)
+            ) : filtered.length === 0 ? (
+              <div className="bg-white border border-rule rounded-xl p-12 text-center">
+                <Briefcase className="w-8 h-8 text-gray-300 mx-auto mb-2" strokeWidth={1.75} />
+                <div className="font-semibold text-ink">No jobs match your filters</div>
+                <div className="text-sm text-muted mt-1">Try clearing one of the filters.</div>
+              </div>
+            ) : filtered.map((job) => (
+              <JobCard key={job.id}
+                job={job}
+                applied={applied.has(job.id)}
+                onApply={() => setSelected(job)} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Apply modal — also serves as detail view */}
+      {selected && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3 p-6 border-b border-rule">
+              <div className="w-12 h-12 rounded-lg bg-paper border border-rule flex items-center justify-center overflow-hidden flex-shrink-0">
+                {selected.company?.logoUrl
+                  ? <img src={selected.company.logoUrl} alt="" className="w-full h-full object-cover" />
+                  : <Building2 className="w-6 h-6 text-gray-400" strokeWidth={1.75} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-display text-[18px] font-bold text-ink leading-tight">{selected.title}</h2>
+                <div className="text-[13px] text-muted mt-0.5">{selected.company?.name}</div>
+              </div>
+              <button onClick={() => setSelected(null)} aria-label="Close" className="text-muted hover:text-ink">
                 <X className="w-5 h-5" strokeWidth={2.5} />
               </button>
             </div>
-            <textarea rows={4} placeholder="Why are you a great fit? Mention your audience, niche, past collabs…"
-              className="w-full bg-bg border border-gray-200 rounded-xl p-3 text-[13px] outline-none focus:border-accent resize-none mb-4"
-              value={applyMsg} onChange={e => setApplyMsg(e.target.value)} />
-            <button onClick={handleApply} disabled={!applyMsg.trim() || applying}
-              className="w-full h-11 bg-accent hover:bg-accent-dk text-white font-bold rounded-full disabled:opacity-50 transition">
-              {applying ? 'Submitting…' : 'Submit Application'}
-            </button>
+            <div className="p-6 space-y-4">
+              <div className="flex flex-wrap gap-1.5">
+                {selected.category && <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${categoryColors[selected.category] || 'bg-gray-100 text-gray-500'}`}>{selected.category}</span>}
+                {selected.platform && <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-accent-lt text-accent-dk">{selected.platform}</span>}
+                {selected.dealType && <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">{dealLabel(selected.dealType)}</span>}
+                {selected.experienceLevel && <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-paper text-muted">{expLabel(selected.experienceLevel)}</span>}
+                <span className="inline-flex items-center gap-1 text-[11.5px] bg-green-50 text-green-700 font-bold px-2.5 py-1 rounded-full">
+                  <BadgeDollarSign className="w-3 h-3" strokeWidth={2.5} /> {payDisplay(selected)}
+                </span>
+              </div>
+              {selected.description && (
+                <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap">{selected.description}</p>
+              )}
+              {selected.requirements?.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1.5">Requirements</div>
+                  <ul className="space-y-1">
+                    {selected.requirements.map((r, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[13.5px] text-gray-700">
+                        <Check className="w-3.5 h-3.5 text-sl-purple flex-shrink-0 mt-1" strokeWidth={3} /> {r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {!applied.has(selected.id) && (
+                <div className="pt-2 border-t border-rule">
+                  <div className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2 mt-2">Your application</div>
+                  <textarea rows={4} placeholder="Why are you a great fit? Mention your audience, niche, past collabs…"
+                    className="w-full bg-paper border border-rule rounded-xl p-3 text-[13.5px] outline-none focus:border-sl-purple resize-none mb-3"
+                    value={applyMsg} onChange={(e) => setApplyMsg(e.target.value)} />
+                  <button onClick={handleApply} disabled={!applyMsg.trim() || applying}
+                    className="w-full h-11 bg-streamlink text-white font-semibold rounded-full text-[14px] transition disabled:opacity-50 shadow-[0_6px_18px_rgba(232,52,122,0.25)]">
+                    {applying ? 'Submitting…' : 'Submit application'}
+                  </button>
+                </div>
+              )}
+              {applied.has(selected.id) && (
+                <div className="pt-3 border-t border-rule">
+                  <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-50 text-green-700 font-semibold rounded-full text-[13.5px]">
+                    <Check className="w-4 h-4" strokeWidth={3} /> Application submitted
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ──────────────── Card ────────────────
+function JobCard({ job, applied, onApply }) {
+  return (
+    <div className="bg-white border border-rule rounded-2xl p-4 flex items-start gap-3.5 hover:border-[#C4BDE8] hover:shadow-[0_2px_16px_rgba(124,58,237,0.07)] transition cursor-pointer"
+      onClick={onApply}>
+      <div className="w-[42px] h-[42px] rounded-xl bg-accent-lt text-accent-dk flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {job.company?.logoUrl
+          ? <img src={job.company.logoUrl} alt="" className="w-full h-full object-cover" />
+          : <Building2 className="w-5 h-5" strokeWidth={2} />}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2 mb-0.5">
+          <div className="font-display text-[15px] font-semibold text-ink leading-tight truncate">{job.title}</div>
+          <div className="text-[15px] font-semibold text-ink whitespace-nowrap">{payDisplay(job)}</div>
+        </div>
+        <div className="text-[12px] text-muted truncate mb-2.5">{job.company?.name || 'Brand Partner'}</div>
+        <div className="flex flex-wrap gap-1.5">
+          {job.platform && <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-accent-lt text-accent-dk border border-purple-200">{job.platform}</span>}
+          {job.dealType && <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">{dealLabel(job.dealType)}</span>}
+          {job.category && <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-paper text-muted border border-rule">{job.category}</span>}
+          {job.experienceLevel && <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-paper text-muted border border-rule">{expLabel(job.experienceLevel)}</span>}
+        </div>
+      </div>
+
+      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+        {applied ? (
+          <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-green-600 px-3 py-1.5">
+            <Check className="w-3.5 h-3.5" strokeWidth={3} /> Applied
+          </span>
+        ) : (
+          <button onClick={(e) => { e.stopPropagation(); onApply(); }}
+            className="text-[13px] font-medium px-4 py-1.5 rounded-full border-[1.5px] border-sl-purple text-sl-purple hover:bg-sl-purple hover:text-white transition">
+            Apply
+          </button>
+        )}
+        <span className="text-[11px] text-muted">{formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}</span>
+      </div>
     </div>
   )
 }

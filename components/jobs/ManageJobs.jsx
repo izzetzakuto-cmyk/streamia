@@ -16,14 +16,41 @@ import { useAppStore, useAuthStore } from '@/lib/store'
 
 const JOB_TYPES = ['Sponsored Stream', 'Ambassador', 'Full Time', 'Contract', 'Event']
 const JOB_CATEGORIES = [
-  'Influencer Campaigns',
-  'Affiliate Marketing',
-  'Live Streaming',
-  'Adult Content Operations',
-  'Coin Reseller (Live Apps)',
+  'Brand Collaboration',
+  'Paid Partnership',
+  'UGC Creator',
+  'Sponsored Content',
+  'Affiliate Partner',
+  'Brand Ambassador',
+  'Livestream Host',
+  'Streamer Collaboration',
+  'Influencer Campaign Participant',
+  'Product Reviewer',
+  'Content Creator',
+  'Creator Partnership',
+  'Agency Recruitment',
+  'Event Host',
+  'Livestream Co-Host',
+  'Creator Manager',
+  'Community Manager',
+  'Video Editor',
+  'Social Media Manager',
+  'Cross-Promotion Partner',
 ]
-const PLATFORMS_FIELD = ['Twitch', 'Kick', 'YouTube', 'Multi-Platform']
-const PAY_PERIODS = ['stream', 'month', 'year', 'event']
+const PLATFORMS_FIELD = ['Twitch', 'Kick', 'YouTube', 'TikTok', 'Instagram', 'Multi-Platform']
+// Faz 10 — Lara filter alignment. These dictionaries are the source of truth
+// for what brands pick when posting; Jobs.jsx sidebar reads from them too.
+const DEAL_TYPES = [
+  { value: 'per-stream', label: 'Per stream' },
+  { value: 'monthly',    label: 'Monthly retainer' },
+  { value: 'revenue',    label: 'Revenue share' },
+  { value: 'one-off',    label: 'One-off' },
+]
+const EXPERIENCE_LEVELS = [
+  { value: 'beginner',     label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'expert',       label: 'Expert' },
+]
 
 export default function ManageJobsPage() {
   const { user } = useAuthStore()
@@ -223,7 +250,8 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
   const [form, setForm] = useState({
     title: '', description: '',
     jobType: '', category: '', platform: '',
-    payMin: '', payMax: '', payPeriod: 'month',
+    dealType: 'monthly', experienceLevel: '',
+    payMin: '', payMax: '',
     requirements: [], reqInput: '',
     isActive: false, // listing only goes live AFTER Stripe confirms payment
     durationDays: 7,
@@ -251,7 +279,12 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
         platform: form.platform || null,
         payMin: form.payMin ? Number(form.payMin) : null,
         payMax: form.payMax ? Number(form.payMax) : null,
-        payPeriod: form.payPeriod || null,
+        dealType: form.dealType || null,
+        experienceLevel: form.experienceLevel || null,
+        // payPeriod kept null — dealType is the new source of truth; legacy
+        // rows with payPeriod still display correctly via the fallback in
+        // Jobs.jsx:payDisplay.
+        payPeriod: null,
         requirements: form.requirements.length ? form.requirements : null,
         isActive: false,
       })
@@ -305,7 +338,22 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
               </select>
             </Field>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Deal type">
+              <select value={form.dealType} onChange={(e) => setForm({ ...form, dealType: e.target.value })}
+                className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent">
+                {DEAL_TYPES.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Experience">
+              <select value={form.experienceLevel} onChange={(e) => setForm({ ...form, experienceLevel: e.target.value })}
+                className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent">
+                <option value="">Any level</option>
+                {EXPERIENCE_LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Pay min ($)">
               <input type="number" min={0} value={form.payMin} onChange={(e) => setForm({ ...form, payMin: e.target.value })}
                 className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent" />
@@ -313,12 +361,6 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
             <Field label="Pay max ($)">
               <input type="number" min={0} value={form.payMax} onChange={(e) => setForm({ ...form, payMax: e.target.value })}
                 className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent" />
-            </Field>
-            <Field label="Pay period">
-              <select value={form.payPeriod} onChange={(e) => setForm({ ...form, payPeriod: e.target.value })}
-                className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent">
-                {PAY_PERIODS.map((p) => <option key={p} value={p}>per {p}</option>)}
-              </select>
             </Field>
           </div>
           <Field label="Description">

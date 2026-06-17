@@ -100,12 +100,19 @@ rsync -az --delete --exclude '.env' -e ssh \
   .next/standalone/ streamia-vps:/srv/streamia-next/
 rsync -az --delete -e ssh \
   .next/static/ streamia-vps:/srv/streamia-next/.next/static/
+rsync -az -e ssh \
+  public/ streamia-vps:/srv/streamia-next/public/
 ssh streamia-vps 'pm2 restart streamia-web'
 ```
 
 **Critical:** the `--exclude '.env'` on the Next.js rsync is mandatory —
 `/srv/streamia-next/.env` holds the prod env (NEXT_PUBLIC_API_URL etc.)
 and `rsync --delete` will wipe it without that flag.
+
+**Equally critical:** Next.js standalone output does **not** copy `public/`
+into `.next/standalone/`. The third rsync above (no `--delete`) ships the
+brand assets, favicon, etc. Skipping this leaves `/brand/*` requests as 404
+and shows a broken-image placeholder in the navigation and login pages.
 
 ### Test accounts (production)
 

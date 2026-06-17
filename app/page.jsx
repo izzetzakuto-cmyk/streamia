@@ -3,6 +3,7 @@ import {
   ArrowRight, BadgeCheck, BarChart3, Building2, Calendar, Check, DollarSign, Handshake,
   Heart, MessageCircle, MessageSquare, Radio, Share2, Sparkles, Users,
 } from 'lucide-react'
+import InlineLogin from '@/components/auth/InlineLogin'
 
 // Brand marks — lucide doesn't ship Twitch/Kick/YouTube.
 function TwitchMark({ className, style }) {
@@ -114,132 +115,88 @@ export default function Page() {
       </nav>
 
       <main id="main-content">
-      {/* Hero */}
+      {/* Hero — Lara split-screen: left brand panel, right login (June 2026 refresh) */}
       <section aria-label="Hero" className="relative overflow-hidden">
-        <div className="relative max-w-6xl mx-auto px-6 pt-16 sm:pt-20 pb-20 sm:pb-24 grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-14 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1 border border-rule rounded-full text-micro font-mono font-semibold uppercase text-muted bg-paper">
-              <span className="inline-flex items-center justify-center w-5 h-5 bg-accent text-white rounded-full" aria-hidden>
-                <Radio className="w-3 h-3" strokeWidth={2.5} />
-              </span>
-              For creators · streamers · brands
-            </div>
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-20 sm:pb-24 grid lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12 items-stretch">
+          {/* Left: brand panel with soft pastel blobs */}
+          <div className="relative rounded-3xl overflow-hidden bg-[#FAFAFA] border border-rule px-8 sm:px-12 py-12 sm:py-16 flex flex-col">
+            {/* Soft pastel blobs */}
+            <span aria-hidden className="absolute -top-32 -left-28 w-[480px] h-[480px] rounded-full bg-[#EDE8FF] blur-[110px] opacity-90" />
+            <span aria-hidden className="absolute -bottom-20 -right-16 w-[360px] h-[360px] rounded-full bg-[#FFE0EE] blur-[110px] opacity-70" />
+            <span aria-hidden className="absolute top-[40%] left-[28%] w-[280px] h-[280px] rounded-full bg-[#FFE8DC] blur-[110px] opacity-50" />
 
-            <h1 className="font-display text-h2-lg sm:text-display md:text-display-lg text-ink mt-6 font-medium">
-              The Network Built for{' '}
-              <em className="not-italic md:italic text-accent-dk font-medium">Creators, Streamers &amp; Brands</em>
-            </h1>
-            <p className="font-display text-h3 text-ink mt-4 font-semibold">
-              Connect. Collaborate. Grow.
-            </p>
-            <p className="text-lede text-muted mt-5 max-w-lg">
-              Streamlink is the social network where livestreamers, influencers, agencies, and brands connect, showcase achievements, discover opportunities, and build powerful partnerships.
-            </p>
-            <p className="text-body text-accent-dk font-semibold mt-4 max-w-lg">
-              Find your next collaboration. Build your reputation. Monetize your audience.
-            </p>
+            <div className="relative">
+              {/* 3D hummingbird — Lara's official submark */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/icon.svg" alt=""
+                className="w-44 sm:w-52 h-auto -ml-3 mb-2 drop-shadow-[0_12px_28px_rgba(228,52,122,0.25)]" />
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-8">
-              <Link href="/register" className="group inline-flex items-center justify-center gap-2 px-6 py-3 bg-ink hover:bg-black text-white font-semibold rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white">
-                Create your free profile
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2.25} aria-hidden />
-              </Link>
-              <Link href="/login" className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-rule hover:border-ink text-ink font-semibold rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white">
-                Explore the feed
-              </Link>
-            </div>
+              {/* Wordmark — Lara's gradient lockup */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/logo-wordmark.svg" alt="StreamLink"
+                className="h-10 sm:h-12 w-auto mb-7" />
 
-            <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-caption text-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} aria-hidden />
-                Free forever for streamers
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} aria-hidden />
-                No credit card required
-              </span>
-            </div>
+              <h1 className="font-display text-h2 sm:text-h2-lg text-ink font-bold leading-tight max-w-md">
+                The Network built for<br />
+                <span className="bg-streamlink bg-clip-text text-transparent">Streamers, Influencers<br />&amp; Brands.</span>
+              </h1>
 
-            <div className="mt-10 pt-8 border-t border-rule">
-              <div className="text-micro font-mono font-semibold uppercase text-muted mb-3">Works with your platforms</div>
-              <div className="flex flex-wrap items-center gap-2">
-                {PLATFORMS.map(({ name, color, Mark, path, logo, logoIcon }) =>
-                  logo ? (
-                    <div key={name} className="inline-flex items-center px-3 py-1.5 border border-rule rounded-full bg-paper">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={logo} alt={name} className="h-4 w-auto" />
-                    </div>
-                  ) : (
-                    <div key={name} className="inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 border border-rule rounded-full text-caption font-semibold text-ink bg-paper">
-                      {logoIcon
-                        // eslint-disable-next-line @next/next/no-img-element
-                        ? <img src={logoIcon} alt="" className="w-4 h-4 object-contain" />
-                        : Mark
-                          ? <Mark className="w-3.5 h-3.5" style={{ color }} />
-                          : <BrandMark path={path} className="w-3.5 h-3.5" style={{ color }} />}
-                      {name}
-                    </div>
-                  )
-                )}
+              <p className="text-body text-muted mt-5 max-w-md leading-relaxed">
+                StreamLink is where creators build their reputation, agencies discover top talent, and brands close deals — all in one professional network made for the live streaming world.
+              </p>
+
+              {/* Connect · Collaborate · Grow pills */}
+              <div className="flex flex-wrap gap-2.5 mt-7">
+                <span className="px-5 py-2 rounded-full text-[13px] font-semibold bg-[#FFF0EB] text-sl-orange border-[1.5px] border-[#FFD8C8]">Connect.</span>
+                <span className="px-5 py-2 rounded-full text-[13px] font-semibold bg-[#FFF0F5] text-sl-pink border-[1.5px] border-[#FFD0E4]">Collaborate.</span>
+                <span className="px-5 py-2 rounded-full text-[13px] font-semibold bg-[#F3EEFF] text-sl-purple border-[1.5px] border-[#DDD0FF]">Grow.</span>
               </div>
             </div>
+
+            {/* Stats */}
+            <dl className="relative mt-12 flex gap-10">
+              {[
+                { label: 'Creators', value: '120K+' },
+                { label: 'Brand Deals', value: '8,400' },
+                { label: 'Agencies', value: '3,200' },
+              ].map((s) => (
+                <div key={s.label}>
+                  <dd className="font-display text-[26px] font-extrabold bg-streamlink bg-clip-text text-transparent leading-none">{s.value}</dd>
+                  <dt className="text-[12px] text-muted mt-1 font-medium">{s.label}</dt>
+                </div>
+              ))}
+            </dl>
           </div>
 
-          {/* Preview cards — editorial flat with hairline borders */}
-          <div className="relative">
-            <div className="grid grid-cols-6 gap-3">
-              <div className="col-span-6 bg-paper border border-rule rounded-2xl p-5 shadow-card">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-ink flex items-center justify-center text-white font-mono font-semibold text-[11px]">SV</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-caption font-bold text-ink truncate">ShadowViper</span>
-                      <BadgeCheck className="w-4 h-4 text-sky-500" fill="currentColor" strokeWidth={0} aria-hidden />
-                    </div>
-                    <div className="text-micro font-mono text-muted">Twitch Partner · Horror games</div>
-                  </div>
-                  <div className="inline-flex items-center gap-1 text-micro font-mono font-bold text-live uppercase">
-                    <span className="w-1.5 h-1.5 rounded-full bg-live animate-pulse" aria-hidden />
-                    Live
-                  </div>
-                </div>
-                <p className="text-caption text-ink/80 leading-relaxed">
-                  Just hit <strong className="text-ink">100,000 followers</strong> on Twitch! 3 years of late nights and horror games finally paid off.
-                </p>
-                <div className="flex items-center gap-5 mt-4 pt-3 border-t border-rule text-muted">
-                  <div className="inline-flex items-center gap-1.5 text-caption font-medium"><Heart className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> 3.2K</div>
-                  <div className="inline-flex items-center gap-1.5 text-caption font-medium"><MessageCircle className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> 847</div>
-                  <div className="inline-flex items-center gap-1.5 text-caption font-medium ml-auto"><Share2 className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> Share</div>
-                </div>
-              </div>
+          {/* Right: inline login with gradient top bar */}
+          <div className="relative bg-white border border-rule rounded-3xl px-6 sm:px-10 py-10 sm:py-12 shadow-card flex items-center justify-center overflow-hidden">
+            <span aria-hidden className="absolute top-0 inset-x-0 h-1 bg-streamlink" />
+            <InlineLogin />
+          </div>
+        </div>
 
-              <div className="col-span-3 bg-paper border border-rule rounded-2xl p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center text-white font-mono font-semibold text-[10px]">NX</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-caption font-bold text-ink truncate">NeonXtra</div>
-                    <div className="flex items-center gap-1 text-micro font-mono text-muted">
-                      <KickMark className="w-3 h-3 text-[#53FC18]" />
-                      Kick · FPS
-                    </div>
-                  </div>
+        {/* Platform strip below the split panel — keeps "works with your platforms" promise */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-14">
+          <div className="text-micro font-mono font-semibold uppercase text-muted mb-3">Works with your platforms</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {PLATFORMS.map(({ name, color, Mark, path, logo, logoIcon }) =>
+              logo ? (
+                <div key={name} className="inline-flex items-center px-3 py-1.5 border border-rule rounded-full bg-paper">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={logo} alt={name} className="h-4 w-auto" />
                 </div>
-                <div className="flex items-center gap-2 px-2.5 py-1.5 bg-accent-lt rounded-lg">
-                  <Handshake className="w-3.5 h-3.5 text-accent-dk" strokeWidth={2} aria-hidden />
-                  <span className="text-caption font-semibold text-accent-dk">Looking for duo collab</span>
+              ) : (
+                <div key={name} className="inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 border border-rule rounded-full text-caption font-semibold text-ink bg-paper">
+                  {logoIcon
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={logoIcon} alt="" className="w-4 h-4 object-contain" />
+                    : Mark
+                      ? <Mark className="w-3.5 h-3.5" style={{ color }} />
+                      : <BrandMark path={path} className="w-3.5 h-3.5" style={{ color }} />}
+                  {name}
                 </div>
-              </div>
-
-              <div className="col-span-3 bg-ink text-white border border-ink rounded-2xl p-4 shadow-card relative overflow-hidden">
-                <div className="inline-flex items-center gap-1 text-micro font-mono font-bold uppercase text-amber-300 mb-3">
-                  <DollarSign className="w-3 h-3" strokeWidth={2.5} aria-hidden />
-                  Brand deal
-                </div>
-                <div className="text-caption font-bold">RedBull Gaming</div>
-                <div className="text-micro font-mono text-white/60 mt-0.5">FPS · 50K+ followers</div>
-                <div className="font-display text-[28px] leading-none tracking-tight mt-3">$2,500<span className="text-micro font-mono text-white/60 ml-1.5">/stream</span></div>
-              </div>
-            </div>
+              )
+            )}
           </div>
         </div>
       </section>
