@@ -5,14 +5,6 @@ import { useRouter } from 'next/navigation'
 import { authApi } from '@/lib/api-client'
 import { useAuthStore } from '@/lib/store'
 
-function TwitchMark({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="#9147FF" aria-hidden>
-      <path d="M11.64 5.93h1.43v4.28h-1.43m3.93-4.28H17v4.28h-1.43M7 2L3.43 5.57v12.86h4.28V22l3.57-3.57h2.86L20.57 12V2m-1.43 9.29-2.85 2.85h-2.86l-2.5 2.5v-2.5H7.71V3.43h11.43z" />
-    </svg>
-  )
-}
-
 function GoogleMark({ className }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden>
@@ -61,16 +53,11 @@ export default function InlineLogin() {
       <p className="text-[14px] text-muted mt-2">Sign in to your StreamLink account to continue</p>
 
       {/* Social */}
-      <div className="grid grid-cols-2 gap-3 mt-8">
+      <div className="mt-8">
         <Link href="/login"
-          className="h-[46px] inline-flex items-center justify-center gap-2 bg-[#F4F2FA] border-[1.5px] border-rule hover:border-sl-purple/40 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.1)] text-ink text-[14px] font-medium rounded-xl transition">
+          className="w-full h-[46px] inline-flex items-center justify-center gap-2 bg-[#F4F2FA] border-[1.5px] border-rule hover:border-sl-purple/40 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.1)] text-ink text-[14px] font-medium rounded-xl transition">
           <GoogleMark className="w-[18px] h-[18px]" />
-          Google
-        </Link>
-        <Link href="/login"
-          className="h-[46px] inline-flex items-center justify-center gap-2 bg-[#F4F2FA] border-[1.5px] border-rule hover:border-sl-purple/40 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.1)] text-ink text-[14px] font-medium rounded-xl transition">
-          <TwitchMark className="w-[18px] h-[18px]" />
-          Twitch
+          Continue with Google
         </Link>
       </div>
 

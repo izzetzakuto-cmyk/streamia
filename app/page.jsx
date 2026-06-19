@@ -168,9 +168,8 @@ export default function Page() {
             </dl>
           </div>
 
-          {/* Right: inline login with gradient top bar */}
+          {/* Right: inline login */}
           <div className="relative bg-white border border-rule rounded-3xl px-6 sm:px-10 py-10 sm:py-12 shadow-card flex items-center justify-center overflow-hidden">
-            <span aria-hidden className="absolute top-0 inset-x-0 h-1 bg-streamlink" />
             <InlineLogin />
           </div>
         </div>

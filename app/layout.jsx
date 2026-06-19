@@ -57,7 +57,10 @@ export const metadata = {
 }
 
 export const viewport = {
-  themeColor: '#7C3AED',
+  // White (was #7C3AED) — Safari fills the overscroll area above the document
+  // with the theme-color, which looked like a purple bar pinned to the top of
+  // the landing nav. Lara's June 2026 design wants this surface to read white.
+  themeColor: '#FFFFFF',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
