@@ -123,6 +123,7 @@ export default function UpgradeModal({
             </Elements>
           )}
         </div>
+      </div>
     </div>
   )
 }
