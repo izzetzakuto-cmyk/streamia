@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { BarChart3, EyeOff, Loader2, ShieldCheck, Trash2, Users as UsersIcon } from 'lucide-react'
+import { BarChart3, CreditCard, EyeOff, Loader2, ShieldCheck, Trash2, Users as UsersIcon } from 'lucide-react'
 import { adminApi } from '@/lib/api-client'
 import { useAppStore, useAuthStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
@@ -9,6 +9,7 @@ const TABS = [
   { id: 'overview',   label: 'Overview',   Icon: BarChart3 },
   { id: 'users',      label: 'Users',      Icon: UsersIcon },
   { id: 'moderation', label: 'Moderation', Icon: ShieldCheck },
+  { id: 'billing',    label: 'Billing',    Icon: CreditCard },
 ]
 
 export default function AdminPage() {
@@ -50,6 +51,7 @@ export default function AdminPage() {
       {tab === 'overview'   && <OverviewTab showToast={showToast} />}
       {tab === 'users'      && <UsersTab showToast={showToast} />}
       {tab === 'moderation' && <ModerationTab showToast={showToast} />}
+      {tab === 'billing'    && <BillingTab showToast={showToast} />}
     </div>
   )
 }
@@ -263,5 +265,212 @@ function ModerationTab({ showToast }) {
         </div>
       ))}
     </div>
+  )
+}
+
+// ── Billing ──
+function BillingTab({ showToast }) {
+  return (
+    <div className="space-y-6">
+      <PlansEditor showToast={showToast} />
+      <PaymentsPanel showToast={showToast} />
+      <DisputesPanel showToast={showToast} />
+    </div>
+  )
+}
+
+function SectionCard({ title, hint, children }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-gray-100">
+        <div className="text-[13.5px] font-extrabold">{title}</div>
+        {hint && <div className="text-[11.5px] text-gray-400 mt-0.5">{hint}</div>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function money(cents, currency) {
+  return `${(Number(cents || 0) / 100).toFixed(2)} ${(currency || 'usd').toUpperCase()}`
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    paid: 'bg-emerald-50 text-emerald-700',
+    failed: 'bg-red-50 text-red-700',
+    refunded: 'bg-gray-100 text-gray-600',
+    partially_refunded: 'bg-amber-50 text-amber-700',
+    disputed: 'bg-red-50 text-red-700',
+  }
+  return <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${map[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>
+}
+
+function PlansEditor({ showToast }) {
+  const [plans, setPlans] = useState(null)
+  const load = () =>
+    adminApi.plans().then((r) => setPlans(r.items ?? [])).catch((e) => showToast(e.message || 'Failed to load plans', 'error'))
+  useEffect(() => { load() }, [])
+  return (
+    <SectionCard title="Plans" hint="Enter the Stripe price IDs after creating the products in the Stripe Dashboard.">
+      {!plans ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-accent animate-spin" /></div>
+      ) : plans.length === 0 ? (
+        <div className="px-5 py-6 text-center text-[12.5px] text-gray-400">No plans yet — run the DB migration.</div>
+      ) : (
+        <div className="divide-y divide-gray-50">
+          {plans.map((p) => <PlanRow key={p.id} plan={p} showToast={showToast} onSaved={load} />)}
+        </div>
+      )}
+    </SectionCard>
+  )
+}
+
+function PlanRow({ plan, showToast, onSaved }) {
+  const [monthly, setMonthly] = useState(plan.stripePriceIdMonthly ?? '')
+  const [yearly, setYearly] = useState(plan.stripePriceIdYearly ?? '')
+  const [active, setActive] = useState(!!plan.active)
+  const [saving, setSaving] = useState(false)
+  const save = async () => {
+    setSaving(true)
+    try {
+      await adminApi.updatePlan(plan.id, {
+        stripePriceIdMonthly: monthly.trim() || null,
+        stripePriceIdYearly: yearly.trim() || null,
+        active,
+      })
+      showToast('Plan updated')
+      onSaved()
+    } catch (e) {
+      showToast(e.message || 'Could not save', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+  return (
+    <div className="px-5 py-4 space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[13px] font-extrabold capitalize">
+          {plan.name}
+          <span className="text-gray-400 font-normal">
+            {' · '}{plan.key} · {plan.audience}
+            {plan.amountMonthly != null ? ` · $${plan.amountMonthly / 100}/mo` : ''}
+            {plan.trialDays ? ` · ${plan.trialDays}d trial` : ''}
+          </span>
+        </div>
+        <label className="flex items-center gap-1.5 text-[11.5px] font-bold text-gray-600 flex-shrink-0">
+          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Active
+        </label>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        <input value={monthly} onChange={(e) => setMonthly(e.target.value)} placeholder="Monthly price ID (price_…)"
+          className="h-9 border border-gray-200 rounded-lg px-3 text-[12.5px] outline-none focus:border-accent" />
+        <input value={yearly} onChange={(e) => setYearly(e.target.value)} placeholder="Yearly price ID (optional)"
+          className="h-9 border border-gray-200 rounded-lg px-3 text-[12.5px] outline-none focus:border-accent" />
+      </div>
+      <button onClick={save} disabled={saving}
+        className="h-9 px-4 bg-accent hover:bg-accent-dk text-white rounded-lg text-[12.5px] font-bold disabled:opacity-60 inline-flex items-center gap-2">
+        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Save
+      </button>
+    </div>
+  )
+}
+
+function PaymentsPanel({ showToast }) {
+  const [rows, setRows] = useState(null)
+  const load = () =>
+    adminApi.payments(100).then((r) => setRows(r.items ?? [])).catch((e) => showToast(e.message || 'Failed', 'error'))
+  useEffect(() => { load() }, [])
+  const refund = async (p) => {
+    if (!p.stripePaymentIntentId && !p.stripeChargeId) return showToast('No payment intent / charge to refund', 'error')
+    if (!window.confirm(`Refund ${money(p.amount, p.currency)}?`)) return
+    try {
+      await adminApi.createRefund(
+        p.stripePaymentIntentId
+          ? { paymentIntentId: p.stripePaymentIntentId, reason: 'requested_by_customer' }
+          : { chargeId: p.stripeChargeId, reason: 'requested_by_customer' },
+      )
+      showToast('Refund issued')
+      load()
+    } catch (e) {
+      showToast(e.message || 'Refund failed', 'error')
+    }
+  }
+  return (
+    <SectionCard title="Payments" hint="Every invoice / charge. Issue a refund from here.">
+      {!rows ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-accent animate-spin" /></div>
+      ) : rows.length === 0 ? (
+        <div className="px-5 py-6 text-center text-[12.5px] text-gray-400">No payments yet.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-[12.5px]">
+            <thead>
+              <tr className="text-left text-gray-400 border-b border-gray-100">
+                <th className="px-5 py-2 font-bold">Date</th>
+                <th className="px-3 py-2 font-bold">Amount</th>
+                <th className="px-3 py-2 font-bold">Status</th>
+                <th className="px-3 py-2 font-bold">Kind</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p) => (
+                <tr key={p.id} className="border-b border-gray-50">
+                  <td className="px-5 py-2.5 text-gray-500">{formatDistanceToNow(new Date(p.createdAt), { addSuffix: true })}</td>
+                  <td className="px-3 py-2.5 font-bold">
+                    {money(p.amount, p.currency)}
+                    {p.amountRefunded > 0 ? <span className="text-gray-400 font-normal"> (−{money(p.amountRefunded, p.currency)})</span> : null}
+                  </td>
+                  <td className="px-3 py-2.5"><StatusBadge status={p.status} /></td>
+                  <td className="px-3 py-2.5 text-gray-500">{p.kind}</td>
+                  <td className="px-3 py-2.5 text-right">
+                    {(p.status === 'paid' || p.status === 'partially_refunded') && (p.stripePaymentIntentId || p.stripeChargeId) ? (
+                      <button onClick={() => refund(p)}
+                        className="px-2.5 py-1 text-[11px] font-bold text-red-600 border border-red-200 rounded-full hover:border-red-400">
+                        Refund
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </SectionCard>
+  )
+}
+
+function DisputesPanel({ showToast }) {
+  const [rows, setRows] = useState(null)
+  useEffect(() => {
+    adminApi.disputes(100).then((r) => setRows(r.items ?? [])).catch((e) => showToast(e.message || 'Failed', 'error'))
+  }, [])
+  return (
+    <SectionCard title="Disputes" hint="Chargebacks — respond with evidence in the Stripe Dashboard before the due date.">
+      {!rows ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-accent animate-spin" /></div>
+      ) : rows.length === 0 ? (
+        <div className="px-5 py-6 text-center text-[12.5px] text-gray-400">No disputes.</div>
+      ) : (
+        <div className="divide-y divide-gray-50">
+          {rows.map((d) => (
+            <div key={d.id} className="px-5 py-3.5 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[12.5px] font-bold">
+                  {money(d.amount, d.currency)} · <span className="text-gray-500 font-normal">{d.reason || 'unknown'}</span>
+                </div>
+                <div className="text-[11px] text-gray-400">
+                  {d.status}
+                  {d.evidenceDueBy ? ` · evidence due ${new Date(d.evidenceDueBy).toLocaleDateString()}` : ''}
+                </div>
+              </div>
+              <StatusBadge status={d.status} />
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
   )
 }

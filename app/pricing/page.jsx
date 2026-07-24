@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { ArrowRight, Award, Check, Crown, Zap } from 'lucide-react'
+import { ArrowRight, Zap } from 'lucide-react'
+import PricingPlans from '@/components/billing/PricingPlans'
 
 export const metadata = {
   title: 'Pricing',
-  description:
-    'Simple plans for streamers, influencers, brands and agencies. Free forever for creators; Pro from $39/mo.',
+  description: 'Simple plans for streamers, influencers, brands and agencies. Free forever for creators.',
   openGraph: {
     title: 'StreamLink pricing',
     description: 'Free forever for streamers. Pro plans for brands and agencies.',
@@ -12,70 +12,6 @@ export const metadata = {
     siteName: 'StreamLink',
   },
 }
-
-const PLANS = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    Icon: Award,
-    iconBg: 'bg-gray-100 text-gray-700',
-    price: 0,
-    period: 'forever',
-    description: 'Get started for free',
-    cardClass: 'border-gray-200',
-    cta: 'Create free account',
-    ctaHref: '/register',
-    ctaClass: 'border border-gray-300 text-gray-700 hover:border-gray-500',
-    features: [
-      'Full streamer profile',
-      'Browse creator network',
-      'Up to 10 job applications / month',
-      'Direct DM with creators (2 new / day)',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    Icon: Crown,
-    iconBg: 'bg-accent-lt text-accent',
-    price: 15,
-    period: 'month',
-    description: 'For serious creators',
-    cardClass: 'border-accent ring-2 ring-accent/20',
-    badge: 'Most popular',
-    cta: 'Upgrade',
-    ctaHref: '/login?next=/pricing',
-    ctaClass: 'bg-accent hover:bg-accent-dk text-white',
-    features: [
-      'See who viewed your profile',
-      'Unlimited messaging (no daily cap)',
-      'Featured placement in search',
-      'Channel analytics dashboard',
-      'Verified badge',
-    ],
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    Icon: Zap,
-    iconBg: 'bg-purple-100 text-purple-700',
-    price: 149,
-    period: 'month',
-    description: 'For brands & agencies',
-    cardClass: 'border-purple-200',
-    cta: 'Talk to sales',
-    ctaHref: '/register/company',
-    ctaClass: 'bg-purple-600 hover:bg-purple-700 text-white',
-    features: [
-      'Everything in Pro',
-      'Priority listing placement',
-      'Dedicated account manager',
-      'Creator match recommendations',
-      'Contract & deal management',
-      'API access',
-    ],
-  },
-]
 
 export default function PricingPage() {
   return (
@@ -112,39 +48,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 pb-24 grid md:grid-cols-3 gap-4">
-        {PLANS.map(({ id, name, Icon, iconBg, price, period, description, cardClass, badge, cta, ctaHref, ctaClass, features }) => (
-          <div key={id} className={`relative bg-white border rounded-2xl p-7 ${cardClass}`}>
-            {badge && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-accent text-white text-[10.5px] font-extrabold uppercase tracking-wider rounded-full shadow-sm">
-                {badge}
-              </div>
-            )}
-            <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl ${iconBg}`}>
-              <Icon className="w-5 h-5" strokeWidth={2.25} />
-            </div>
-            <div className="mt-5">
-              <div className="text-[14px] font-extrabold uppercase tracking-wider text-gray-500">{name}</div>
-              <div className="text-[12px] text-gray-400 mt-0.5">{description}</div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-1">
-              <span className="text-[40px] font-extrabold tracking-tight">${price}</span>
-              <span className="text-[13px] text-gray-400 font-semibold">/ {period}</span>
-            </div>
-            <Link href={ctaHref} className={`mt-5 inline-flex items-center justify-center w-full h-11 rounded-full text-[13.5px] font-bold transition ${ctaClass}`}>
-              {cta}
-            </Link>
-            <ul className="mt-6 space-y-2.5">
-              {features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-[13px] text-gray-600">
-                  <Check className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" strokeWidth={3} />
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </section>
+      <PricingPlans />
 
       <footer className="border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-start md:items-center gap-6">

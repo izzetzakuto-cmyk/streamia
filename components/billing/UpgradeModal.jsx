@@ -58,6 +58,11 @@ export default function UpgradeModal({
         setPhase('ready')
       } catch (err) {
         if (cancelled) return
+        if (err?.status === 401 || err?.code === 'AUTH_MISSING' || err?.code === 'REFRESH_FAILED') {
+          const next = typeof window !== 'undefined' ? window.location.pathname : '/pricing'
+          window.location.href = '/login?next=' + encodeURIComponent(next)
+          return
+        }
         if (err?.code === 'STRIPE_DISABLED' || err?.code === 'PRICE_MISSING') setPhase('disabled')
         else {
           setError(err?.message || 'Something went wrong.')
