@@ -98,7 +98,7 @@ export default function UpgradeModal({
           </button>
         </div>
 
-        <div className="px-6 pb-6 overflow-y-auto">
+        <div className="px-6 pb-6 overflow-y-auto flex-1 min-h-0">
           {phase === 'loading' && (
             <div className="py-12 flex justify-center">
               <Loader2 className="w-6 h-6 text-accent animate-spin" strokeWidth={2.5} />
