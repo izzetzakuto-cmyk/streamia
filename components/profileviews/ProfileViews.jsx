@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@/lib/router-shim'
 import { BadgeCheck, Crown, Eye, EyeOff, Loader2, Lock } from 'lucide-react'
-import { profileViewApi, stripeApi } from '@/lib/api-client'
+import { profileViewApi } from '@/lib/api-client'
 import { useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
+import UpgradeModal from '@/components/billing/UpgradeModal'
 
 export default function ProfileViewsPage() {
   const { showToast } = useAppStore()
@@ -12,6 +13,7 @@ export default function ProfileViewsPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [upgrading, setUpgrading] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -27,18 +29,7 @@ export default function ProfileViewsPage() {
     return () => { cancelled = true }
   }, [])
 
-  const startUpgrade = async () => {
-    setUpgrading(true)
-    try {
-      const { url } = await stripeApi.checkout({ plan: 'pro', billing: 'monthly' })
-      if (url) window.location.href = url
-      else showToast('Checkout temporarily unavailable. Please try again later.', 'error')
-    } catch (err) {
-      showToast(err.message || 'Could not start checkout', 'error')
-    } finally {
-      setUpgrading(false)
-    }
-  }
+  const startUpgrade = () => setShowUpgrade(true)
 
   if (loading) {
     return (
@@ -146,6 +137,17 @@ export default function ProfileViewsPage() {
             ))
           )}
         </div>
+      )}
+
+      {showUpgrade && (
+        <UpgradeModal
+          plan="premium"
+          billing="monthly"
+          title="Unlock who viewed your profile"
+          subtitle="Premium — see everyone who checked you out, plus unlimited messaging."
+          onClose={() => setShowUpgrade(false)}
+          onSuccess={() => window.location.reload()}
+        />
       )}
     </div>
   )
