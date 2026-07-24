@@ -87,8 +87,8 @@ export default function UpgradeModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between mb-4 sticky top-0 -mt-6 -mx-6 px-6 pt-6 pb-3 bg-white rounded-t-2xl z-10">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between p-6 pb-4 flex-none">
           <div>
             <h2 className="text-lg font-extrabold text-gray-900">{title}</h2>
             {subtitle ? <p className="text-[13px] text-gray-500 mt-0.5">{subtitle}</p> : null}
@@ -98,30 +98,31 @@ export default function UpgradeModal({
           </button>
         </div>
 
-        {phase === 'loading' && (
-          <div className="py-12 flex justify-center">
-            <Loader2 className="w-6 h-6 text-accent animate-spin" strokeWidth={2.5} />
-          </div>
-        )}
+        <div className="px-6 pb-6 overflow-y-auto">
+          {phase === 'loading' && (
+            <div className="py-12 flex justify-center">
+              <Loader2 className="w-6 h-6 text-accent animate-spin" strokeWidth={2.5} />
+            </div>
+          )}
 
-        {phase === 'disabled' && (
-          <p className="text-sm text-gray-500 py-8 text-center">Payments aren&apos;t set up yet. Check back soon!</p>
-        )}
+          {phase === 'disabled' && (
+            <p className="text-sm text-gray-500 py-8 text-center">Payments aren&apos;t set up yet. Check back soon!</p>
+          )}
 
-        {phase === 'error' && <p className="text-sm text-red-600 py-8 text-center">{error}</p>}
+          {phase === 'error' && <p className="text-sm text-red-600 py-8 text-center">{error}</p>}
 
-        {phase === 'ready' && clientSecret && stripePromise && (
-          <Elements
-            stripe={stripePromise}
-            options={{
-              clientSecret,
-              appearance: { theme: 'stripe', variables: { colorPrimary: '#7C5CFC', borderRadius: '10px' } },
-            }}
-          >
-            <PaymentForm mode={mode} onSuccess={onSuccess} onClose={onClose} />
-          </Elements>
-        )}
-      </div>
+          {phase === 'ready' && clientSecret && stripePromise && (
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret,
+                appearance: { theme: 'stripe', variables: { colorPrimary: '#7C5CFC', borderRadius: '10px' } },
+              }}
+            >
+              <PaymentForm mode={mode} onSuccess={onSuccess} onClose={onClose} />
+            </Elements>
+          )}
+        </div>
     </div>
   )
 }
