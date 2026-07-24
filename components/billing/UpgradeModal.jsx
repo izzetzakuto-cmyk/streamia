@@ -39,22 +39,30 @@ export default function UpgradeModal({
     let cancelled = false
     ;(async () => {
       try {
-        const cfg = await stripeApi.config()
+        // Fire config + subscribe in parallel and start loading Stripe.js the
+        // moment we have the publishable key — so the card form shows up fast.
+        const cfgP = stripeApi.config()
+        const subP = stripeApi.subscribe({ plan, billing }).then(
+          (v) => ({ v }),
+          (e) => ({ e }),
+        )
+        const cfg = await cfgP
         if (cancelled) return
         if (!cfg?.enabled || !cfg?.publishableKey) {
           setPhase('disabled')
           return
         }
-        const sub = await stripeApi.subscribe({ plan, billing })
+        setPk(cfg.publishableKey) // begins loadStripe() while subscribe finishes
+        const sub = await subP
         if (cancelled) return
-        if (!sub?.clientSecret) {
+        if (sub.e) throw sub.e
+        if (!sub.v?.clientSecret) {
           setError('Could not start the payment. Please try again.')
           setPhase('error')
           return
         }
-        setPk(cfg.publishableKey)
-        setClientSecret(sub.clientSecret)
-        setMode(sub.mode || 'payment')
+        setClientSecret(sub.v.clientSecret)
+        setMode(sub.v.mode || 'payment')
         setPhase('ready')
       } catch (err) {
         if (cancelled) return
@@ -79,8 +87,8 @@ export default function UpgradeModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between mb-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between mb-4 sticky top-0 -mt-6 -mx-6 px-6 pt-6 pb-3 bg-white rounded-t-2xl z-10">
           <div>
             <h2 className="text-lg font-extrabold text-gray-900">{title}</h2>
             {subtitle ? <p className="text-[13px] text-gray-500 mt-0.5">{subtitle}</p> : null}
