@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Award, Building2, Check, Crown, Sparkles, Zap } from 'lucide-react'
+import UpgradeCta from '@/components/billing/UpgradeCta'
 
 export const metadata = {
   title: 'Pricing',
@@ -105,7 +106,7 @@ const PLANS = [
 ]
 
 function PlanCard({ plan }) {
-  const { name, Icon, iconBg, price, period, description, cardClass, badge, trialBadge, cta, ctaHref, ctaClass, features } = plan
+  const { id, name, Icon, iconBg, price, period, description, cardClass, badge, trialBadge, cta, ctaHref, ctaClass, features } = plan
   // Use the right glyph for cents so $9.99 doesn't look like $9.
   const [whole, cents] = String(price).split('.')
 
@@ -133,9 +134,15 @@ function PlanCard({ plan }) {
           <Check className="w-3 h-3" strokeWidth={3} /> {trialBadge}
         </div>
       )}
-      <Link href={ctaHref} className={`mt-5 inline-flex items-center justify-center w-full h-11 rounded-full text-[13.5px] font-bold transition ${ctaClass}`}>
-        {cta}
-      </Link>
+      {price > 0 ? (
+        <UpgradeCta plan={id} className={`mt-5 inline-flex items-center justify-center w-full h-11 rounded-full text-[13.5px] font-bold transition ${ctaClass}`}>
+          {cta}
+        </UpgradeCta>
+      ) : (
+        <Link href={ctaHref} className={`mt-5 inline-flex items-center justify-center w-full h-11 rounded-full text-[13.5px] font-bold transition ${ctaClass}`}>
+          {cta}
+        </Link>
+      )}
       <ul className="mt-6 space-y-2.5">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-[13px] text-gray-600">
