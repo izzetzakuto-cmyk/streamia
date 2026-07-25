@@ -156,7 +156,7 @@ export default function RegisterCompanyPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight mb-6">
-          <Logo w={30} />
+          <Logo h={30} />
           <span className="ml-2 text-[11px] bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full">FOR BRANDS</span>
         </div>
 

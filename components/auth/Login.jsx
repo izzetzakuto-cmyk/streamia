@@ -34,7 +34,7 @@ export default function LoginPage() {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
 
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-          <Logo w={30} />
+          <Logo h={30} />
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">Welcome back</h1>

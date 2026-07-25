@@ -24,8 +24,8 @@ export const metadata = {
     description: 'The professional home for livestreamers. Free forever for creators.',
   },
   icons: {
-    icon: [{ url: '/hummingbird.png', type: 'image/png' }],
-    apple: [{ url: '/hummingbird.png' }],
+    icon: [{ url: '/streamlink_mark.png', type: 'image/png' }],
+    apple: [{ url: '/streamlink_mark.png' }],
   },
 }
 

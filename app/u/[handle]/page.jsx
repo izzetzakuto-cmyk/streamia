@@ -65,7 +65,7 @@ export default async function PublicProfilePage({ params }) {
       <nav className="bg-white/85 backdrop-blur border-b border-gray-100">
         <div className="max-w-3xl mx-auto h-16 flex items-center px-6">
           <Link href="/" className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight">
-            <Logo w={30} />
+            <Logo h={30} />
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/login" className="px-3 py-1.5 text-[13.5px] font-semibold text-gray-600 hover:text-gray-900 transition">Sign in</Link>

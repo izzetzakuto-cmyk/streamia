@@ -109,7 +109,7 @@ export default function RegisterPage() {
       <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
           <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-            <Logo w={30} />
+            <Logo h={30} />
           </div>
           <h1 className="text-[22px] font-extrabold mb-1">Join StreamLink</h1>
           <p className="text-sm text-gray-400 mb-6">How do you want to use StreamLink?</p>
@@ -180,7 +180,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-5">
-          <Logo w={30} />
+          <Logo h={30} />
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">Create your profile</h1>

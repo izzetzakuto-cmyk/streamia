@@ -63,7 +63,7 @@ export default function Page() {
       <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto h-16 flex items-center px-6">
           <Link href="/" className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight">
-            <Logo w={30} />
+            <Logo h={30} />
           </Link>
           <div className="hidden md:flex items-center gap-7 ml-10 text-[13.5px] text-gray-500 font-semibold">
             <a href="#features" className="hover:text-gray-900 transition">Platform</a>
@@ -302,7 +302,7 @@ export default function Page() {
       <footer className="border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-start md:items-center gap-6">
           <Link href="/" className="flex items-center gap-2 text-[15px] font-extrabold tracking-tight">
-            <Logo w={26} />
+            <Logo h={26} />
           </Link>
           <div className="flex items-center gap-5 text-[12.5px] font-semibold text-gray-500">
             <a href="#features" className="hover:text-gray-900 transition">Platform</a>

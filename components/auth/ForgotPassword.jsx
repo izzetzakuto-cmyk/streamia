@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-          <Logo w={30} />
+          <Logo h={30} />
         </div>
 
         {!sent ? (

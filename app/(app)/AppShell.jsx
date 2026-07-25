@@ -57,7 +57,7 @@ export default function AppShell({ me, children }) {
       {/* Desktop nav */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200 h-14 hidden md:flex items-center px-4 gap-2">
         <Link href="/feed" className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight flex-shrink-0">
-          <Logo w={26} />
+          <Logo h={26} />
         </Link>
 
         <div className="relative flex-1 max-w-[240px] ml-2">
@@ -118,7 +118,7 @@ export default function AppShell({ me, children }) {
       {/* Mobile shrunk top bar */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200 h-12 flex md:hidden items-center px-3 gap-2">
         <Link href="/feed" className="flex items-center gap-2 text-[15px] font-extrabold tracking-tight">
-          <Logo w={24} />
+          <Logo h={24} />
         </Link>
         <button onClick={signOut} className="ml-auto text-[11.5px] font-semibold text-gray-500">Sign out</button>
       </nav>
