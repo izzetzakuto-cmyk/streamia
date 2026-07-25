@@ -32,6 +32,13 @@ export default function Feed({ initialPosts = [] }) {
 
         {/* Feed */}
         <main className="space-y-3">
+          {/* Mobile-only: mirror the app — profile card, trending tags and
+              live-now stack above the composer (they sit in the sidebars on desktop). */}
+          <div className="md:hidden space-y-3">
+            <ProfileSidebar profile={profile} />
+            <TrendingTags />
+            <LiveNowStrip />
+          </div>
           <Composer />
           {!posts
             ? Array(4).fill(0).map((_, i) => <SkeletonPost key={i} />)
@@ -466,6 +473,45 @@ function LiveNowSidebar() {
           )
         })
       )}
+    </div>
+  )
+}
+
+// Compact horizontal Live-Now strip for the mobile feed (matches the app).
+// Shares the 'live-now' SWR cache with LiveNowSidebar, so no extra fetch.
+function LiveNowStrip() {
+  const { data: live } = useSWR('live-now', () => profileApi.liveNow(8), { refreshInterval: 60_000 })
+  if (!live || live.length === 0) return null
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <div className="w-2 h-2 bg-live rounded-full animate-pulse" />
+        <span className="text-[12px] font-extrabold uppercase tracking-wider text-gray-500">Live Now</span>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3">
+        {live.map((s) => {
+          const initials = (s.displayName || '??').slice(0, 2).toUpperCase()
+          const card = (
+            <div className="flex-shrink-0 w-28 bg-white border border-gray-200 rounded-xl shadow-sm p-3 text-center">
+              <div className="w-11 h-11 mx-auto rounded-xl bg-gradient-to-br from-live to-red-400 flex items-center justify-center text-white font-bold text-sm overflow-hidden mb-2">
+                {s.avatarUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={s.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  : initials}
+              </div>
+              <div className="text-[12px] font-extrabold truncate flex items-center justify-center gap-1">
+                <span className="w-1.5 h-1.5 bg-live rounded-full flex-shrink-0" />{s.displayName}
+              </div>
+              <div className="text-[10.5px] text-gray-400 truncate">{s.category || '—'}</div>
+            </div>
+          )
+          return s.liveStreamUrl ? (
+            <a key={s.id} href={s.liveStreamUrl} target="_blank" rel="noopener noreferrer">{card}</a>
+          ) : (
+            <Link key={s.id} href={`/profile/${s.id}`}>{card}</Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
