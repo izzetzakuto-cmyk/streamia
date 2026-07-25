@@ -3,7 +3,8 @@ import { SkeletonConversation } from '@/components/Skeleton'
 import { useEffect, useState, useRef } from 'react'
 import { Link } from '@/lib/router-shim'
 import { AlertTriangle, Crown } from 'lucide-react'
-import { messageApi, profileApi, subscriptionApi, stripeApi } from '@/lib/api-client'
+import { messageApi, profileApi, subscriptionApi } from '@/lib/api-client'
+import UpgradeModal from '@/components/billing/UpgradeModal'
 import { getSocket } from '@/lib/socket'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
@@ -24,6 +25,7 @@ export default function MessagesPage() {
   const [searchResults, setSearchResults] = useState([])
   const [subInfo, setSubInfo] = useState(null)
   const [upgrading, setUpgrading] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const messagesEndRef = useRef(null)
 
   const refreshSub = () => subscriptionApi.me().then(setSubInfo).catch(() => {})
@@ -74,19 +76,8 @@ export default function MessagesPage() {
     setSending(false)
   }
 
-  const startUpgrade = async (plan = 'pro', billing = 'monthly') => {
-    setUpgrading(true)
-    try {
-      const { url } = await stripeApi.checkout({ plan, billing })
-      if (url) { window.location.href = url; return }
-      showToast('Checkout URL missing', 'error')
-    } catch (err) {
-      if (err.code === 'STRIPE_DISABLED' || err.code === 'PRICE_MISSING') {
-        showToast('Payments are not set up yet. Check back soon!', 'error')
-      } else showToast(err.message || 'Checkout failed', 'error')
-    }
-    setUpgrading(false)
-  }
+  // On-site upgrade (no redirect): open the Payment Element modal.
+  const startUpgrade = () => setShowUpgrade(true)
 
   const searchPeople = async (q) => {
     if (!q.trim()) { setSearchResults([]); return }
@@ -178,6 +169,14 @@ export default function MessagesPage() {
           </button>
           <Link to="/pricing" className="text-[11.5px] font-semibold underline hover:no-underline">See plans</Link>
         </div>
+      )}
+      {showUpgrade && (
+        <UpgradeModal
+          plan="premium"
+          title="Upgrade"
+          onClose={() => setShowUpgrade(false)}
+          onSuccess={() => { setShowUpgrade(false); refreshSub() }}
+        />
       )}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex" style={{ height: 'calc(100dvh - 130px)' }}>
 

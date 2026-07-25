@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@/lib/router-shim'
 import { BadgeCheck, Crown, Eye, EyeOff, Loader2, Lock } from 'lucide-react'
-import { profileViewApi, stripeApi } from '@/lib/api-client'
+import { profileViewApi } from '@/lib/api-client'
+import UpgradeModal from '@/components/billing/UpgradeModal'
 import { useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -12,6 +13,7 @@ export default function ProfileViewsPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [upgrading, setUpgrading] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -27,18 +29,8 @@ export default function ProfileViewsPage() {
     return () => { cancelled = true }
   }, [])
 
-  const startUpgrade = async () => {
-    setUpgrading(true)
-    try {
-      const { url } = await stripeApi.checkout({ plan: 'pro', billing: 'monthly' })
-      if (url) window.location.href = url
-      else showToast('Checkout temporarily unavailable. Please try again later.', 'error')
-    } catch (err) {
-      showToast(err.message || 'Could not start checkout', 'error')
-    } finally {
-      setUpgrading(false)
-    }
-  }
+  // On-site upgrade (no redirect): open the Payment Element modal.
+  const startUpgrade = () => setShowUpgrade(true)
 
   if (loading) {
     return (
@@ -78,6 +70,14 @@ export default function ProfileViewsPage() {
         </div>
       </div>
 
+      {showUpgrade && (
+        <UpgradeModal
+          plan="premium"
+          title="Unlock profile views"
+          onClose={() => setShowUpgrade(false)}
+          onSuccess={() => { setShowUpgrade(false); window.location.reload() }}
+        />
+      )}
       {locked ? (
         <div className="bg-gradient-to-br from-accent-lt via-white to-amber-50 border border-amber-200 rounded-2xl p-6 text-center shadow-sm">
           <div className="w-12 h-12 mx-auto bg-white border border-amber-200 rounded-full flex items-center justify-center mb-3">
@@ -85,7 +85,7 @@ export default function ProfileViewsPage() {
           </div>
           <h2 className="text-[16px] font-extrabold mb-1">Unlock who viewed your profile</h2>
           <p className="text-[13px] text-gray-600 max-w-md mx-auto mb-4">
-            Free accounts see how many people viewed you. Upgrade to <b>Pro</b> for $15/month to see <b>who</b> they
+            Free accounts see how many people viewed you. Upgrade to <b>Premium</b> for $9.99/month to see <b>who</b> they
             are, plus unlimited messaging.
           </p>
           <button
@@ -95,7 +95,7 @@ export default function ProfileViewsPage() {
             {upgrading
               ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2.5} />
               : <Crown className="w-4 h-4" strokeWidth={2.25} />}
-            Upgrade to Pro · $15/mo
+            Upgrade to Premium · $9.99/mo
           </button>
           <Link to="/pricing" className="block mt-2 text-[12px] font-semibold text-accent hover:underline">See all plans</Link>
         </div>

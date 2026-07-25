@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
 import { useNavigate } from '@/lib/router-shim'
-import { Key, Loader2, Mail, Settings as SettingsIcon, Trash2, User } from 'lucide-react'
-import { authApi, profileApi } from '@/lib/api-client'
+import { CreditCard, ExternalLink, Key, Loader2, Mail, Settings as SettingsIcon, Trash2, User } from 'lucide-react'
+import { authApi, profileApi, stripeApi, subscriptionApi } from '@/lib/api-client'
+import UpgradeModal from '@/components/billing/UpgradeModal'
 import { useAppStore, useAuthStore } from '@/lib/store'
 import ImageUpload from '@/components/ImageUpload'
 import PlatformPicker from '@/components/PlatformPicker'
@@ -17,6 +18,7 @@ const INFLUENCER_CATEGORIES = [
 const TABS = [
   { id: 'profile',  label: 'Profile',  Icon: User },
   { id: 'account',  label: 'Account',  Icon: Key },
+  { id: 'billing',  label: 'Billing',  Icon: CreditCard },
   { id: 'privacy',  label: 'Privacy',  Icon: SettingsIcon },
 ]
 
@@ -46,6 +48,7 @@ export default function SettingsPage() {
 
       {tab === 'profile'  && <ProfileTab profile={profile} showToast={showToast} refresh={fetchProfile} />}
       {tab === 'account'  && <AccountTab user={user} showToast={showToast} />}
+      {tab === 'billing'  && <SubscriptionTab showToast={showToast} />}
       {tab === 'privacy'  && <PrivacyTab showToast={showToast} signOut={signOut} navigate={navigate} />}
     </div>
   )
@@ -407,6 +410,113 @@ function PrivacyTab({ showToast, signOut, navigate }) {
 }
 
 // ── UI primitives ──
+function SubscriptionTab({ showToast }) {
+  const [sub, setSub] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState('')
+  const [showUpgrade, setShowUpgrade] = useState(false)
+
+  const load = () => {
+    setLoading(true)
+    subscriptionApi
+      .me()
+      .then(setSub)
+      .catch((e) => showToast(e.message || 'Could not load subscription', 'error'))
+      .finally(() => setLoading(false))
+  }
+  useEffect(() => { load() }, [])
+
+  const openPortal = async () => {
+    setBusy('portal')
+    try {
+      const { url } = await stripeApi.portal(window.location.href)
+      if (url) window.location.href = url
+      else showToast('Billing portal unavailable', 'error')
+    } catch (e) {
+      showToast(e.code === 'NO_CUSTOMER' ? 'No billing account yet.' : e.message || 'Could not open billing portal', 'error')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const cancel = async () => {
+    if (!window.confirm('Cancel your subscription at the end of the current period?')) return
+    setBusy('cancel')
+    try {
+      await subscriptionApi.cancel()
+      showToast('Subscription will cancel at the period end.')
+      load()
+    } catch (e) {
+      showToast(e.message || 'Could not cancel', 'error')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="w-6 h-6 text-accent animate-spin" strokeWidth={2.5} />
+      </div>
+    )
+  }
+
+  const plan = sub?.plan ?? 'free'
+  const isPaid = plan !== 'free'
+  const periodEnd = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null
+
+  return (
+    <div className="space-y-4">
+      <Card title="Your plan" hint="Manage your subscription and billing.">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[15px] font-extrabold capitalize">{isPaid ? plan : 'Free plan'}</div>
+            <div className="text-[12.5px] text-gray-400 mt-0.5">
+              {isPaid
+                ? `Status: ${sub?.status ?? '—'}${periodEnd ? ` · renews ${periodEnd.toLocaleDateString()}` : ''}`
+                : 'You are on the free plan.'}
+            </div>
+          </div>
+          {!isPaid && <PrimaryButton onClick={() => setShowUpgrade(true)}>Upgrade</PrimaryButton>}
+        </div>
+      </Card>
+
+      {isPaid && (
+        <Card title="Billing" hint="Update your card, view invoices, or cancel.">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={openPortal}
+              disabled={busy === 'portal'}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-gray-300 text-[13px] font-bold text-gray-700 hover:border-gray-500 disabled:opacity-60"
+            >
+              {busy === 'portal' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+              Manage billing
+            </button>
+            <button
+              onClick={cancel}
+              disabled={busy === 'cancel'}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-red-200 text-[13px] font-bold text-red-600 hover:border-red-400 disabled:opacity-60"
+            >
+              {busy === 'cancel' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Cancel subscription
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {showUpgrade && (
+        <UpgradeModal
+          plan="premium"
+          billing="monthly"
+          title="Upgrade to Premium"
+          onClose={() => setShowUpgrade(false)}
+          onSuccess={() => { setShowUpgrade(false); load() }}
+        />
+      )}
+    </div>
+  )
+}
+
 function Card({ title, hint, children, danger }) {
   return (
     <div className={`bg-white border rounded-2xl shadow-sm p-5 ${danger ? 'border-red-200' : 'border-gray-200'}`}>
