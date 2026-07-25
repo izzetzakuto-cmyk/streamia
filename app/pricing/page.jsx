@@ -1,15 +1,16 @@
 import Link from 'next/link'
-import { ArrowRight, Zap } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import Logo from '@/components/ui/Logo'
 import PricingPlans from '@/components/billing/PricingPlans'
 
 export const metadata = {
   title: 'Pricing',
   description: 'Simple plans for streamers, influencers, brands and agencies. Free forever for creators.',
   openGraph: {
-    title: 'StreamLink pricing',
+    title: 'Streamia pricing',
     description: 'Free forever for streamers. Pro plans for brands and agencies.',
     url: 'https://streamia.co/pricing',
-    siteName: 'StreamLink',
+    siteName: 'Streamia',
   },
 }
 
@@ -19,10 +20,7 @@ export default function PricingPage() {
       <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto h-16 flex items-center px-6">
           <Link href="/" className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight">
-            <span className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center text-white">
-              <Zap className="w-4 h-4" strokeWidth={2.5} />
-            </span>
-            Stream<span className="text-accent">Link</span>
+            <Logo w={30} />
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/login" className="px-3 py-1.5 text-[13.5px] font-semibold text-gray-600 hover:text-gray-900 transition">Sign in</Link>
@@ -53,13 +51,10 @@ export default function PricingPage() {
       <footer className="border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-start md:items-center gap-6">
           <Link href="/" className="flex items-center gap-2 text-[15px] font-extrabold tracking-tight">
-            <span className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white">
-              <Zap className="w-3.5 h-3.5" strokeWidth={2.5} />
-            </span>
-            Stream<span className="text-accent">Link</span>
+            <Logo w={26} />
           </Link>
           <div className="md:ml-auto text-[11.5px] text-gray-400">
-            © {new Date().getFullYear()} StreamLink · Built for streamers, by streamers.
+            © {new Date().getFullYear()} Streamia · Built for streamers, by streamers.
           </div>
         </div>
       </footer>

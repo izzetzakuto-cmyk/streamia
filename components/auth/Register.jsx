@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { Link, useNavigate } from '@/lib/router-shim'
-import { ArrowRight, Building2, Loader2, Sparkles, Tv, Zap } from 'lucide-react'
+import { ArrowRight, Building2, Loader2, Sparkles, Tv } from 'lucide-react'
+import Logo from '@/components/ui/Logo'
 import { authApi, profileApi } from '@/lib/api-client'
 import { useAuthStore } from '@/lib/store'
 import PlatformPicker from '@/components/PlatformPicker'
@@ -108,13 +109,10 @@ export default function RegisterPage() {
       <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
           <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-            <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">
-              <Zap className="w-4 h-4" strokeWidth={2.5} />
-            </div>
-            Stream<span className="text-accent">Link</span>
+            <Logo w={30} />
           </div>
-          <h1 className="text-[22px] font-extrabold mb-1">Join StreamLink</h1>
-          <p className="text-sm text-gray-400 mb-6">How do you want to use StreamLink?</p>
+          <h1 className="text-[22px] font-extrabold mb-1">Join Streamia</h1>
+          <p className="text-sm text-gray-400 mb-6">How do you want to use Streamia?</p>
 
           <div className="space-y-3">
             <button onClick={() => setAccountType('streamer')}
@@ -182,10 +180,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-5">
-          <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">
-            <Zap className="w-4 h-4" strokeWidth={2.5} />
-          </div>
-          Stream<span className="text-accent">Link</span>
+          <Logo w={30} />
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">Create your profile</h1>

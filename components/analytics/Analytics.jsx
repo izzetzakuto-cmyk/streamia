@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[20px] font-extrabold">Analytics</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Your StreamLink activity and growth</p>
+          <p className="text-sm text-gray-400 mt-0.5">Your Streamia activity and growth</p>
         </div>
         <div className="flex gap-2">
           {['Week','Month','Year'].map(p => (

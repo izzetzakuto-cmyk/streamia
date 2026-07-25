@@ -3,24 +3,24 @@ import './globals.css'
 export const metadata = {
   metadataBase: new URL('https://streamia.co'),
   title: {
-    default: 'StreamLink — Professional network for streamers',
-    template: '%s · StreamLink',
+    default: 'Streamia — Professional network for streamers',
+    template: '%s · Streamia',
   },
   description:
-    'StreamLink is the professional home for livestreamers. Connect with top streamers, land brand deals, find collaborators and track your growth.',
-  applicationName: 'StreamLink',
+    'Streamia is the professional home for livestreamers. Connect with top streamers, land brand deals, find collaborators and track your growth.',
+  applicationName: 'Streamia',
   keywords: ['streamers', 'livestream', 'creators', 'twitch', 'kick', 'youtube', 'brand deals', 'influencer'],
   openGraph: {
-    title: 'StreamLink — Professional network for streamers',
+    title: 'Streamia — Professional network for streamers',
     description:
       'Connect with top streamers, land brand deals, find collaborators and track your growth — all in one professional network built for creators.',
     url: 'https://streamia.co',
-    siteName: 'StreamLink',
+    siteName: 'Streamia',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'StreamLink — Professional network for streamers',
+    title: 'Streamia — Professional network for streamers',
     description: 'The professional home for livestreamers. Free forever for creators.',
   },
   icons: {

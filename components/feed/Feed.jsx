@@ -175,7 +175,7 @@ function PostCard({ post }) {
     const url = `${window.location.origin}/u/${post.author?.handle || post.author?.id}`
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${post.author?.displayName} on StreamLink`, text: post.content, url })
+        await navigator.share({ title: `${post.author?.displayName} on Streamia`, text: post.content, url })
       } else {
         await navigator.clipboard.writeText(url)
         showToast('Link copied to clipboard')
