@@ -386,7 +386,7 @@ export default function RegisterCompanyPage() {
             <div className="text-6xl mb-4">🎉</div>
             <h2 className="text-[22px] font-extrabold mb-2">Your brand page is live!</h2>
             <p className="text-[13.5px] text-gray-500 leading-relaxed mb-6">
-              Welcome to Streamia! Thousands of streamers can now discover your brand. Start by posting your first job listing.
+              Welcome to StreamLink! Thousands of streamers can now discover your brand. Start by posting your first job listing.
             </p>
 
             <div className="space-y-3 mb-6">

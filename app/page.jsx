@@ -285,7 +285,7 @@ export default function Page() {
       <section className="py-24 text-center">
         <div className="max-w-3xl mx-auto px-6">
           <h2 className="text-[32px] md:text-4xl font-extrabold tracking-tight">Ready to grow your streaming career?</h2>
-          <p className="text-gray-500 mt-4 text-[15px]">Join thousands of streamers already on Streamia. Free forever.</p>
+          <p className="text-gray-500 mt-4 text-[15px]">Join thousands of streamers already on StreamLink. Free forever.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
             <Link href="/register" className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-gray-900 hover:bg-black text-white font-bold rounded-full text-[14.5px] transition shadow-sm">
               Create your free profile
@@ -310,7 +310,7 @@ export default function Page() {
             <Link href="/register/company" className="hover:text-gray-900 transition">For brands</Link>
           </div>
           <div className="md:ml-auto text-[11.5px] text-gray-400">
-            © {new Date().getFullYear()} Streamia · Built for streamers, by streamers.
+            © {new Date().getFullYear()} StreamLink · Built for streamers, by streamers.
           </div>
         </div>
       </footer>

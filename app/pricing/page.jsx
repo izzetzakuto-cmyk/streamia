@@ -7,10 +7,10 @@ export const metadata = {
   title: 'Pricing',
   description: 'Simple plans for streamers, influencers, brands and agencies. Free forever for creators.',
   openGraph: {
-    title: 'Streamia pricing',
+    title: 'StreamLink pricing',
     description: 'Free forever for streamers. Pro plans for brands and agencies.',
     url: 'https://streamia.co/pricing',
-    siteName: 'Streamia',
+    siteName: 'StreamLink',
   },
 }
 
@@ -54,7 +54,7 @@ export default function PricingPage() {
             <Logo w={26} />
           </Link>
           <div className="md:ml-auto text-[11.5px] text-gray-400">
-            © {new Date().getFullYear()} Streamia · Built for streamers, by streamers.
+            © {new Date().getFullYear()} StreamLink · Built for streamers, by streamers.
           </div>
         </div>
       </footer>

@@ -25,11 +25,11 @@ export async function generateMetadata({ params }) {
   const p = await loadProfile(handle).catch(() => null)
   if (!p) return { title: 'Profile not found' }
 
-  // Plain title; root layout's template appends " · Streamia".
+  // Plain title; root layout's template appends " · StreamLink".
   const title = `${p.displayName} (@${p.handle})`
   const description =
     p.bio?.slice(0, 160) ||
-    `Follow ${p.displayName} on Streamia — ${p.category || 'creator profile'}.`
+    `Follow ${p.displayName} on StreamLink — ${p.category || 'creator profile'}.`
 
   const image = p.bannerUrl || p.avatarUrl || undefined
 
@@ -37,16 +37,16 @@ export async function generateMetadata({ params }) {
     title,
     description,
     openGraph: {
-      title: `${title} · Streamia`,
+      title: `${title} · StreamLink`,
       description,
       url: `https://streamia.co/u/${p.handle}`,
-      siteName: 'Streamia',
+      siteName: 'StreamLink',
       type: 'profile',
       images: image ? [{ url: image }] : undefined,
     },
     twitter: {
       card: image ? 'summary_large_image' : 'summary',
-      title: `${title} · Streamia`,
+      title: `${title} · StreamLink`,
       description,
       images: image ? [image] : undefined,
     },
@@ -131,7 +131,7 @@ export default async function PublicProfilePage({ params }) {
 
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link href="/register" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-dk text-white font-bold rounded-full text-[13.5px] transition">
-                Connect on Streamia
+                Connect on StreamLink
                 <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
               </Link>
               <Link href="/login" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-200 hover:border-gray-400 text-gray-700 font-semibold rounded-full text-[13.5px] transition">
