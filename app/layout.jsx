@@ -24,13 +24,8 @@ export const metadata = {
     description: 'The professional home for livestreamers. Free forever for creators.',
   },
   icons: {
-    icon: [
-      {
-        url:
-          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Crect width='24' height='24' rx='6' fill='%230F172A'/%3E%3Cpath d='M13 3L5 14h5l-1 7 8-11h-5l1-7z' fill='%236C63FF'/%3E%3C/svg%3E",
-        type: 'image/svg+xml',
-      },
-    ],
+    icon: [{ url: '/hummingbird.png', type: 'image/png' }],
+    apple: [{ url: '/hummingbird.png' }],
   },
 }
 

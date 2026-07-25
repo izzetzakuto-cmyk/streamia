@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Logo from '@/components/ui/Logo'
 import { Link, useNavigate } from '@/lib/router-shim'
 import { authApi } from '@/lib/api-client'
 import { useAuthStore } from '@/lib/store'
@@ -33,8 +34,7 @@ export default function LoginPage() {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
 
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-          <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream <span className="text-accent">Link</span>
+          <Logo w={30} />
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">Welcome back</h1>

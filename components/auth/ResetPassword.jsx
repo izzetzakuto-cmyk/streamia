@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Logo from '@/components/ui/Logo'
 import { useNavigate, useSearchParams } from '@/lib/router-shim'
 import { authApi } from '@/lib/api-client'
 
@@ -48,8 +49,7 @@ export default function ResetPasswordPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-2 text-xl font-extrabold tracking-tight mb-6">
-          <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream <span className="text-accent">Link</span>
+          <Logo w={30} />
         </div>
 
         {!ready ? (

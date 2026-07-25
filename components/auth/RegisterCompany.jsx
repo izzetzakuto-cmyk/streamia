@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Logo from '@/components/ui/Logo'
 import { Link, useNavigate } from '@/lib/router-shim'
 import { authApi, companyApi, profileApi } from '@/lib/api-client'
 import { useAuthStore } from '@/lib/store'
@@ -155,8 +156,7 @@ export default function RegisterCompanyPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-2 text-[17px] font-extrabold tracking-tight mb-6">
-          <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white">⚡</div>
-          Stream <span className="text-accent">Link</span>
+          <Logo w={30} />
           <span className="ml-2 text-[11px] bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full">FOR BRANDS</span>
         </div>
 
