@@ -327,7 +327,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
                 const p = platformCatalog.find((x) => x.slug === slug)
                 const label = p?.name || slug.replace(/-/g, ' ')
                 const color = p?.brandColor || '#6B7280'
-                const url = slug === 'twitch' ? profile.twitchUrl : slug === 'kick' ? profile.kickUrl : slug === 'youtube' ? profile.youtubeUrl : null
+                const url = slug.includes('twitch') ? profile.twitchUrl : slug.includes('kick') ? profile.kickUrl : slug.includes('youtube') ? profile.youtubeUrl : null
                 const cls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold capitalize transition hover:brightness-95'
                 const style = { color, backgroundColor: `${color}14` }
                 return url
