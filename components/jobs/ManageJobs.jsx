@@ -104,7 +104,7 @@ export default function ManageJobsPage() {
         <div className="font-extrabold text-[16px]">Only for companies</div>
         <p className="text-sm text-gray-400 mt-1 mb-5">Create a company page to post jobs and manage applicants.</p>
         <button onClick={() => navigate('/register/company')}
-          className="px-5 py-2 bg-streamlink hover:opacity-90 text-white font-bold text-[13px] rounded-full">
+          className="px-5 py-2 btn-gradient text-white font-bold text-[13px] rounded-full">
           Create a brand page
         </button>
       </div>
@@ -121,7 +121,7 @@ export default function ManageJobsPage() {
         <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-3" strokeWidth={1.5} />
         <div className="font-extrabold text-[16px]">No company pages yet</div>
         <p className="text-sm text-gray-400 mt-1 mb-5">You need a company page before you can post jobs.</p>
-        <Link to="/companies" className="px-5 py-2 bg-streamlink hover:opacity-90 text-white font-bold text-[13px] rounded-full inline-flex">
+        <Link to="/companies" className="px-5 py-2 btn-gradient text-white font-bold text-[13px] rounded-full inline-flex">
           Create a company page
         </Link>
       </div>
@@ -413,7 +413,7 @@ function NewJobModal({ company, onClose, onCreated, showToast }) {
             <button type="button" onClick={onClose}
               className="px-4 h-10 border border-gray-200 text-gray-600 font-bold text-[12.5px] rounded-full">Cancel</button>
             <button type="submit" disabled={!form.title.trim() || submitting}
-              className="inline-flex items-center gap-1.5 px-5 h-10 bg-streamlink hover:opacity-90 text-white font-bold text-[12.5px] rounded-full disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 px-5 h-10 btn-gradient text-white font-bold text-[12.5px] rounded-full disabled:opacity-50">
               {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2.5} /> : null}
               Continue to payment
             </button>

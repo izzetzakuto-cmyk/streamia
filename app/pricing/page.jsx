@@ -51,7 +51,7 @@ const PLANS = [
     badge: 'Most popular for creators',
     cta: 'Upgrade · $9.99/mo',
     ctaHref: '/login?next=/pricing',
-    ctaClass: 'bg-streamlink hover:opacity-90 text-white focus:ring-2 focus:ring-accent-pink/40',
+    ctaClass: 'btn-gradient text-white focus:ring-2 focus:ring-accent-pink/40',
     features: [
       'See who viewed your profile',
       'Blue verified badge',
@@ -72,7 +72,7 @@ const PLANS = [
     cardClass: 'border-amber-200',
     cta: 'Start 7-day free trial',
     ctaHref: '/register/company',
-    ctaClass: 'bg-gray-900 hover:bg-black text-white',
+    ctaClass: 'btn-gradient text-white focus:ring-2 focus:ring-accent-pink/40',
     trialBadge: '7-day free trial',
     features: [
       'Direct message streamers + influencers',
@@ -94,7 +94,7 @@ const PLANS = [
     badge: 'For serious growth',
     cta: 'Start 7-day free trial',
     ctaHref: '/register/company',
-    ctaClass: 'bg-purple-600 hover:bg-purple-700 text-white',
+    ctaClass: 'btn-gradient text-white focus:ring-2 focus:ring-accent-pink/40',
     trialBadge: '7-day free trial',
     features: [
       'Everything in Brand Starter',
@@ -135,11 +135,11 @@ function PlanCard({ plan }) {
         </div>
       )}
       {price > 0 ? (
-        <UpgradeCta plan={id} className={`mt-5 inline-flex items-center justify-center w-full h-11 rounded-full text-[13.5px] font-bold transition ${ctaClass}`}>
+        <UpgradeCta plan={id} className={`mt-5 inline-flex items-center justify-center w-full h-[52px] rounded-xl text-[15px] font-bold tracking-wide font-display transition ${ctaClass}`}>
           {cta}
         </UpgradeCta>
       ) : (
-        <Link href={ctaHref} className={`mt-5 inline-flex items-center justify-center w-full h-11 rounded-full text-[13.5px] font-bold transition ${ctaClass}`}>
+        <Link href={ctaHref} className={`mt-5 inline-flex items-center justify-center w-full h-[52px] rounded-xl text-[15px] font-bold tracking-wide font-display transition ${ctaClass}`}>
           {cta}
         </Link>
       )}

@@ -99,7 +99,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !password || !confirm || password !== confirm}
-                className="w-full h-11 bg-streamlink hover:opacity-90 focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full h-11 btn-gradient focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

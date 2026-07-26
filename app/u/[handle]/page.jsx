@@ -131,7 +131,7 @@ export default async function PublicProfilePage({ params }) {
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Link href="/register" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-streamlink hover:opacity-90 text-white font-bold rounded-full text-[13.5px] transition">
+              <Link href="/register" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 btn-gradient text-white font-bold rounded-full text-[13.5px] transition">
                 Connect on StreamLink
                 <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
               </Link>

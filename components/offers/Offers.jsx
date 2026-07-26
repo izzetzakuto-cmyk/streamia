@@ -122,7 +122,7 @@ export default function OffersPage() {
                   {applied.has(selected.id) ? (
                     <div className="px-6 py-2.5 bg-green-50 text-green-700 font-bold rounded-full text-[14px]">✓ Application Sent</div>
                   ) : (
-                    <button onClick={() => setShowApply(true)} className="px-6 py-2.5 bg-streamlink hover:opacity-90 text-white font-bold rounded-full text-[14px] transition">Accept & Apply →</button>
+                    <button onClick={() => setShowApply(true)} className="px-6 py-2.5 btn-gradient text-white font-bold rounded-full text-[14px] transition">Accept & Apply →</button>
                   )}
                   <button onClick={() => showToast('Offer dismissed')} className="px-5 py-2.5 border border-gray-200 text-gray-500 font-bold rounded-full text-[13px] hover:border-gray-400 transition">Not interested</button>
                 </div>
@@ -157,7 +157,7 @@ export default function OffersPage() {
             </div>
             <div className="flex gap-3 mt-4">
               <button onClick={handleApply} disabled={!message.trim() || applying}
-                className="flex-1 h-11 bg-streamlink hover:opacity-90 text-white font-bold rounded-full disabled:opacity-50 transition">
+                className="flex-1 h-11 btn-gradient text-white font-bold rounded-full disabled:opacity-50 transition">
                 {applying ? 'Sending…' : 'Send Application →'}
               </button>
               <button onClick={() => setShowApply(false)} className="px-5 border border-gray-200 rounded-full text-[13px] font-semibold text-gray-500 hover:border-gray-400 transition">Cancel</button>

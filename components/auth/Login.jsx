@@ -75,7 +75,7 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" disabled={loading || !form.email || !form.password}
-            className="w-full h-11 bg-streamlink hover:opacity-90 focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
+            className="w-full h-11 btn-gradient focus:ring-2 focus:ring-accent-pink/40 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
             {loading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

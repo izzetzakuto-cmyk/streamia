@@ -177,7 +177,7 @@ export default function ReviewsPage() {
                     <button
                       onClick={submit}
                       disabled={myRating < 1 || submitting}
-                      className="px-5 py-2 bg-streamlink hover:opacity-90 text-white font-bold text-[13px] rounded-full transition disabled:opacity-50 inline-flex items-center gap-1.5">
+                      className="px-5 py-2 btn-gradient text-white font-bold text-[13px] rounded-full transition disabled:opacity-50 inline-flex items-center gap-1.5">
                       {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2.5} /> : null}
                       Submit
                     </button>

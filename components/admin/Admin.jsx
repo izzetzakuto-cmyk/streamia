@@ -369,7 +369,7 @@ function PlanRow({ plan, showToast, onSaved }) {
           className="h-9 border border-gray-200 rounded-lg px-3 text-[12.5px] outline-none focus:border-accent" />
       </div>
       <button onClick={save} disabled={saving}
-        className="h-9 px-4 bg-streamlink hover:opacity-90 text-white rounded-lg text-[12.5px] font-bold disabled:opacity-60 inline-flex items-center gap-2">
+        className="h-9 px-4 btn-gradient text-white rounded-lg text-[12.5px] font-bold disabled:opacity-60 inline-flex items-center gap-2">
         {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Save
       </button>
     </div>

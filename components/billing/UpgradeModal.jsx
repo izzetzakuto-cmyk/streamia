@@ -175,7 +175,7 @@ function PaymentForm({ mode, onSuccess, onClose }) {
       <button
         type="submit"
         disabled={!stripe || submitting}
-        className="w-full h-11 bg-streamlink hover:opacity-90 text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
+        className="w-full h-11 btn-gradient text-white font-bold rounded-full text-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
       >
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'setup' ? 'Start free trial' : 'Subscribe'}
       </button>
