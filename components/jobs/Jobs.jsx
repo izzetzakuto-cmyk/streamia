@@ -392,7 +392,7 @@ function JobCard({ job, applied, onApply }) {
           </span>
         ) : (
           <button onClick={(e) => { e.stopPropagation(); onApply(); }}
-            className="text-[13px] font-medium px-4 py-1.5 rounded-full border-[1.5px] border-sl-purple text-sl-purple hover:bg-sl-purple hover:text-white transition">
+            className="text-[13px] font-bold px-4 py-1.5 rounded-full btn-gradient text-white transition">
             Apply
           </button>
         )}

@@ -236,8 +236,8 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
           )}
         </div>
         <div className="px-6 pb-5">
-          <div className="flex items-end justify-between -mt-10 mb-4">
-            <div className="relative group/avatar">
+          <div className="flex items-start justify-between mb-4">
+            <div className="relative group/avatar -mt-10">
               <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden bg-graduate-radial flex items-center justify-center text-white font-extrabold text-2xl">
                 {profile.avatarUrl
                   // eslint-disable-next-line @next/next/no-img-element
@@ -261,7 +261,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-live text-white text-[9.5px] font-black px-2 py-0.5 rounded-full border-2 border-white">LIVE</div>
               )}
             </div>
-            <div className="flex items-center gap-2 pb-1">
+            <div className="flex items-center gap-2 mt-3">
               {isOwnProfile ? (
                 <button onClick={() => router.push('/settings')} aria-label="Edit profile"
                   className="inline-flex items-center gap-1.5 h-9 px-3.5 border border-gray-200 rounded-full text-[12.5px] font-bold text-gray-600 hover:border-gray-400 hover:text-gray-900 transition">
@@ -286,7 +286,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
                       : <><Plus className="w-3.5 h-3.5" strokeWidth={3} /> Follow</>}
                   </button>
                   <button onClick={handleConnect} disabled={isConnected}
-                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition ${isConnected ? 'bg-gray-100 text-gray-500' : 'bg-accent text-white hover:bg-accent-dk'}`}>
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition ${isConnected ? 'bg-gray-100 text-gray-500' : 'btn-gradient text-white hover:bg-accent-dk'}`}>
                     {isConnected
                       ? <><Check className="w-3.5 h-3.5" strokeWidth={3} /> Connected</>
                       : <><Handshake className="w-3.5 h-3.5" strokeWidth={2.5} /> Connect</>}

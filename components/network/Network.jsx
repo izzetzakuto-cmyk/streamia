@@ -176,7 +176,7 @@ export default function Network() {
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
                         <button onClick={() => acceptRequest(req.id, req.otherUser?.displayName)}
-                          className="px-4 py-1.5 bg-accent text-white font-bold text-[12px] rounded-full hover:bg-accent-dk transition">Accept</button>
+                          className="px-4 py-1.5 btn-gradient text-white font-bold text-[12px] rounded-full hover:bg-accent-dk transition">Accept</button>
                         <button onClick={() => declineRequest(req.id)}
                           className="px-4 py-1.5 border border-gray-200 text-gray-500 font-bold text-[12px] rounded-full hover:border-gray-400 transition">Decline</button>
                       </div>

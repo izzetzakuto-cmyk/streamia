@@ -193,13 +193,13 @@ export default function CompaniesPage() {
                 )}
               </div>
               <div className="px-6 pb-2 border-b border-gray-100">
-                <div className="flex items-end justify-between -mt-10 mb-3">
-                  <div className="w-20 h-20 rounded-2xl bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-20 h-20 rounded-2xl bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden -mt-10 relative z-10">
                     {selected.logoUrl
                       ? <img src={selected.logoUrl} alt="" className="w-full h-full object-cover" />
                       : <Building2 className="w-9 h-9 text-gray-400" strokeWidth={1.75} />}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-3">
                     {canEditSelected && (
                       <button onClick={openEdit}
                         className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-full font-bold text-[13px] hover:border-gray-400 transition">

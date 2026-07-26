@@ -28,7 +28,7 @@ export default function SupportFab() {
         aria-label={open ? 'Close support menu' : 'Open support menu'}
         aria-expanded={open}
         aria-controls="support-popover"
-        className="fixed bottom-5 right-5 z-[60] w-12 h-12 rounded-full bg-accent text-white shadow-[0_8px_24px_-6px_rgba(108,99,255,0.5)] hover:bg-accent-dk transition flex items-center justify-center focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/40"
+        className="fixed bottom-5 right-5 z-[60] w-12 h-12 rounded-full btn-gradient text-white shadow-[0_8px_24px_-6px_rgba(108,99,255,0.5)] hover:bg-accent-dk transition flex items-center justify-center focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/40"
       >
         {open
           ? <X className="w-5 h-5" strokeWidth={2.25} aria-hidden />

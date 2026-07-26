@@ -185,7 +185,7 @@ export default function MessagesPage() {
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[16px] font-extrabold">Messages</h2>
-              <button onClick={() => setShowNewDM(true)} className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-xl font-bold hover:bg-accent-dk transition">+</button>
+              <button onClick={() => setShowNewDM(true)} className="w-8 h-8 rounded-full btn-gradient text-white flex items-center justify-center text-xl font-bold hover:bg-accent-dk transition">+</button>
             </div>
             <input type="text" placeholder="🔍 Search…"
               className="w-full h-9 bg-bg border border-gray-200 rounded-full px-4 text-[12.5px] outline-none focus:border-accent"
@@ -260,7 +260,7 @@ export default function MessagesPage() {
                 value={newMessage} onChange={e => setNewMessage(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendMessage()} />
               <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-                className="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-accent-dk transition text-base">➤</button>
+                className="w-10 h-10 btn-gradient text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-accent-dk transition text-base">➤</button>
             </div>
           </div>
         ) : (
@@ -268,7 +268,7 @@ export default function MessagesPage() {
             <div className="text-5xl">💬</div>
             <div className="text-lg font-extrabold text-gray-700">Your Messages</div>
             <div className="text-sm text-gray-400">Select a conversation or start a new one</div>
-            <button onClick={() => setShowNewDM(true)} className="mt-2 px-5 py-2 bg-accent text-white font-bold rounded-full text-sm hover:bg-accent-dk transition">+ New Message</button>
+            <button onClick={() => setShowNewDM(true)} className="mt-2 px-5 py-2 btn-gradient text-white font-bold rounded-full text-sm hover:bg-accent-dk transition">+ New Message</button>
           </div>
         )}
       </div>
