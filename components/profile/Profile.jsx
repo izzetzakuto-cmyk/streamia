@@ -96,6 +96,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
   // Platform catalog (slug → name + brandColor) so every selected platform
   // renders as a badge, not just the three that used to be hardcoded.
   const [platformCatalog, setPlatformCatalog] = useState([])
+  const [showBadgeEditor, setShowBadgeEditor] = useState(false)
   useEffect(() => { platformApi.list().then(setPlatformCatalog).catch(() => {}) }, [])
 
   const isOwnProfile = viewingOwn || profile?.id === myProfile?.id
@@ -321,20 +322,51 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
             </div>
           )}
 
-          {profile.platforms?.length > 0 && (
-            <div className="flex gap-2 mb-3 flex-wrap">
-              {profile.platforms.map((slug) => {
-                const p = platformCatalog.find((x) => x.slug === slug)
-                const label = p?.name || slug.replace(/-/g, ' ')
-                const color = p?.brandColor || '#6B7280'
-                const url = slug.includes('twitch') ? profile.twitchUrl : slug.includes('kick') ? profile.kickUrl : slug.includes('youtube') ? profile.youtubeUrl : null
-                const cls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold capitalize transition hover:brightness-95'
-                const style = { color, backgroundColor: `${color}14` }
-                return url
-                  ? <a key={slug} href={url} target="_blank" rel="noopener noreferrer" className={cls} style={style}>{label}</a>
-                  : <span key={slug} className={cls} style={style}>{label}</span>
-              })}
-            </div>
+          {profile.platforms?.length > 0 && (() => {
+            const all = profile.platforms ?? []
+            const featured = (profile.featuredPlatforms ?? []).filter((s) => all.includes(s))
+            // Show up to 3 badges: the chosen featured ones, else alphabetically.
+            const badgeSlugs = (featured.length ? featured : [...all].sort()).slice(0, 3)
+            const linkFor = (slug) => profile.platformLinks?.[slug]
+              || (slug.includes('twitch') ? profile.twitchUrl : slug.includes('kick') ? profile.kickUrl : slug.includes('youtube') ? profile.youtubeUrl : null)
+            return (
+              <div className="flex gap-2 mb-3 flex-wrap items-center">
+                {badgeSlugs.map((slug) => {
+                  const p = platformCatalog.find((x) => x.slug === slug)
+                  const label = p?.name || slug.replace(/-/g, ' ')
+                  const color = p?.brandColor || '#6B7280'
+                  const url = linkFor(slug)
+                  const cls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold capitalize transition hover:brightness-95'
+                  const style = { color, backgroundColor: `${color}14` }
+                  return url
+                    ? <a key={slug} href={url} target="_blank" rel="noopener noreferrer" className={cls} style={style}>{label}</a>
+                    : <span key={slug} className={cls} style={style}>{label}</span>
+                })}
+                {isOwnProfile && all.length > 0 && (
+                  <button onClick={() => setShowBadgeEditor(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11.5px] font-bold text-gray-500 border border-dashed border-gray-300 hover:border-gray-500 hover:text-gray-700 transition">
+                    <Pencil className="w-3 h-3" strokeWidth={2.5} /> Edit badges
+                  </button>
+                )}
+              </div>
+            )
+          })()}
+
+          {showBadgeEditor && (
+            <BadgeEditor
+              platforms={profile.platforms ?? []}
+              featured={profile.featuredPlatforms ?? []}
+              catalog={platformCatalog}
+              onClose={() => setShowBadgeEditor(false)}
+              onSave={async (slugs) => {
+                try {
+                  const updated = await profileApi.updateMe({ featuredPlatforms: slugs })
+                  setProfile((p) => ({ ...(p ?? {}), ...updated }))
+                  setShowBadgeEditor(false)
+                  showToast('Badges updated')
+                } catch (e) { showToast(e.message || 'Could not update badges', 'error') }
+              }}
+            />
           )}
 
           <div className="flex border-t border-gray-100 -mx-6 mt-3">
@@ -492,6 +524,61 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// Pick up to 3 platforms to feature as badges on the profile (alphabetical).
+function BadgeEditor({ platforms, featured, catalog, onClose, onSave }) {
+  const [selected, setSelected] = useState(() => featured.filter((s) => platforms.includes(s)).slice(0, 3))
+  const [saving, setSaving] = useState(false)
+  const sorted = [...platforms].sort((a, b) => a.localeCompare(b))
+  const meta = (slug) => catalog.find((x) => x.slug === slug)
+  const nameFor = (slug) => meta(slug)?.name || slug.replace(/-/g, ' ')
+  const colorFor = (slug) => meta(slug)?.brandColor || '#6B7280'
+
+  const toggle = (slug) =>
+    setSelected((sel) =>
+      sel.includes(slug) ? sel.filter((s) => s !== slug) : sel.length >= 3 ? sel : [...sel, slug]
+    )
+
+  const save = async () => { setSaving(true); await onSave(selected); setSaving(false) }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between p-5 pb-3 flex-none">
+          <div>
+            <h2 className="text-[16px] font-extrabold">Profile badges</h2>
+            <p className="text-[12.5px] text-gray-400 mt-0.5">Pick up to 3 platforms to show on your profile.</p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="px-5 pb-3 overflow-y-auto flex-1 min-h-0">
+          <div className="flex flex-wrap gap-2">
+            {sorted.map((slug) => {
+              const on = selected.includes(slug)
+              const color = colorFor(slug)
+              return (
+                <button key={slug} type="button" onClick={() => toggle(slug)}
+                  disabled={!on && selected.length >= 3}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-bold capitalize transition disabled:opacity-40 hover:brightness-95"
+                  style={{ color, backgroundColor: on ? `${color}26` : `${color}14`, border: `1.5px solid ${on ? color : 'transparent'}` }}>
+                  {on && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                  {nameFor(slug)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between flex-none">
+          <span className="text-[12px] text-gray-400 font-semibold">{selected.length}/3 selected</span>
+          <button onClick={save} disabled={saving}
+            className="btn-gradient text-white h-10 px-5 rounded-full text-[13px] font-bold inline-flex items-center gap-2 disabled:opacity-60">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2.5} /> : null} Save
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

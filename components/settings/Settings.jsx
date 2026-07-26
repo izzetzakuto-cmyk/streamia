@@ -9,6 +9,9 @@ import ImageUpload from '@/components/ImageUpload'
 import PlatformPicker from '@/components/PlatformPicker'
 import { COUNTRIES, LANGUAGES } from '@/lib/countries'
 
+// "facebook-live" → "Facebook Live" for platform-link field labels.
+const platformLabel = (slug) => slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+
 const INFLUENCER_CATEGORIES = [
   'Fashion & Style', 'Beauty', 'Fitness & Wellness', 'Lifestyle', 'Travel',
   'Food & Drinks', 'Tech & AI', 'Finance & Business', 'Entertainment', 'Gaming',
@@ -67,10 +70,8 @@ function ProfileTab({ profile, showToast, refresh }) {
     language: profile?.language || 'en',
     location: profile?.location || '',
     website: profile?.website || '',
-    twitchUrl: profile?.twitchUrl || '',
-    kickUrl: profile?.kickUrl || '',
-    youtubeUrl: profile?.youtubeUrl || '',
-    liveStreamUrl: profile?.liveStreamUrl || '',
+    platformLinks: profile?.platformLinks || {},
+    featuredPlatforms: profile?.featuredPlatforms || [],
     platforms: profile?.platforms || [],
     contentCategories: profile?.contentCategories || [],
     avatarUrl: profile?.avatarUrl || '',
@@ -83,6 +84,10 @@ function ProfileTab({ profile, showToast, refresh }) {
     try {
       const patch = Object.fromEntries(
         Object.entries(form).map(([k, v]) => [k, v === '' ? null : v])
+      )
+      // Drop empty platform-link URLs so we don't store blanks.
+      patch.platformLinks = Object.fromEntries(
+        Object.entries(form.platformLinks || {}).filter(([, v]) => v && v.trim())
       )
       await profileApi.updateMe(patch)
       showToast('Profile updated')
@@ -183,42 +188,39 @@ function ProfileTab({ profile, showToast, refresh }) {
         </div>
       </Card>
 
-      <Card title="Links">
+      <Card title="Website">
         <Field label="Website">
           <input type="url" value={form.website}
             onChange={(e) => setForm({ ...form, website: e.target.value })}
             placeholder="https://yoursite.com"
             className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent" />
         </Field>
-        <Field label="Twitch URL">
-          <input type="url" value={form.twitchUrl}
-            onChange={(e) => setForm({ ...form, twitchUrl: e.target.value })}
-            placeholder="https://twitch.tv/you"
-            className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent" />
-        </Field>
-        <Field label="Kick URL">
-          <input type="url" value={form.kickUrl}
-            onChange={(e) => setForm({ ...form, kickUrl: e.target.value })}
-            placeholder="https://kick.com/you"
-            className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent" />
-        </Field>
-        <Field label="YouTube URL">
-          <input type="url" value={form.youtubeUrl}
-            onChange={(e) => setForm({ ...form, youtubeUrl: e.target.value })}
-            placeholder="https://youtube.com/@you"
-            className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent" />
-        </Field>
-        <Field label="Live stream URL (used by Go Live button)">
-          <input type="url" value={form.liveStreamUrl}
-            onChange={(e) => setForm({ ...form, liveStreamUrl: e.target.value })}
-            placeholder="https://twitch.tv/you"
-            className="w-full h-10 bg-bg border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-accent" />
-        </Field>
       </Card>
 
-      <Card title="Streaming platforms" hint="Picked from the 84-platform catalog. Shows on your profile and feed.">
+      <Card title="Streaming platforms" hint="Pick your platforms, then add your link for each. Up to 3 show as badges on your profile.">
         <PlatformPicker value={form.platforms}
-          onChange={(slugs) => setForm({ ...form, platforms: slugs })} />
+          onChange={(slugs) => setForm((f) => {
+            const links = {}
+            slugs.forEach((s) => { if (f.platformLinks[s]) links[s] = f.platformLinks[s] })
+            const featured = (f.featuredPlatforms || []).filter((s) => slugs.includes(s))
+            return { ...f, platforms: slugs, platformLinks: links, featuredPlatforms: featured }
+          })} />
+        {form.platforms.length > 0 && (
+          <div className="mt-4 border-t border-gray-100 pt-4 space-y-2">
+            <div className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">
+              Platform links <span className="text-gray-400 font-semibold normal-case">(optional — opens in a new tab)</span>
+            </div>
+            {form.platforms.map((slug) => (
+              <div key={slug} className="flex items-center gap-2">
+                <span className="w-32 flex-shrink-0 text-[12.5px] font-semibold text-gray-600 truncate">{platformLabel(slug)}</span>
+                <input type="url" value={form.platformLinks[slug] || ''}
+                  onChange={(e) => setForm((f) => ({ ...f, platformLinks: { ...f.platformLinks, [slug]: e.target.value } }))}
+                  placeholder="https://…"
+                  className="flex-1 min-w-0 h-9 bg-bg border border-gray-200 rounded-lg px-3 text-[13px] outline-none focus:border-accent" />
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card title="Content niches" hint="Optional — useful for influencers and brand matching.">
