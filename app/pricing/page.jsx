@@ -51,7 +51,7 @@ const PLANS = [
     badge: 'Most popular for creators',
     cta: 'Upgrade · $9.99/mo',
     ctaHref: '/login?next=/pricing',
-    ctaClass: 'bg-accent hover:bg-accent-pink text-white focus:ring-2 focus:ring-accent-pink/40',
+    ctaClass: 'bg-streamlink hover:opacity-90 text-white focus:ring-2 focus:ring-accent-pink/40',
     features: [
       'See who viewed your profile',
       'Blue verified badge',

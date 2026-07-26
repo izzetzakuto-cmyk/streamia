@@ -110,7 +110,7 @@ export default function ImageCropModal({
               Cancel
             </button>
             <button onClick={confirm} disabled={busy || !croppedAreaPixels}
-              className="inline-flex items-center gap-1.5 px-5 py-2 bg-accent hover:bg-accent-dk text-white text-[12.5px] font-bold rounded-full transition disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 px-5 py-2 bg-streamlink hover:opacity-90 text-white text-[12.5px] font-bold rounded-full transition disabled:opacity-50">
               {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2.5} />}
               {busy ? 'Uploading…' : 'Apply & upload'}
             </button>

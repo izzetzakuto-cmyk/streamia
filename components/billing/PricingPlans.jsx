@@ -59,7 +59,7 @@ export default function PricingPlans() {
               onClick={() => setUpgrade(p.key)}
               disabled={!p.hasMonthly}
               className={`mt-5 inline-flex items-center justify-center w-full h-11 rounded-full text-[13.5px] font-bold transition disabled:opacity-50 ${
-                popular ? 'bg-accent hover:bg-accent-dk text-white' : 'border border-gray-300 text-gray-700 hover:border-gray-500'
+                popular ? 'bg-streamlink hover:opacity-90 text-white' : 'border border-gray-300 text-gray-700 hover:border-gray-500'
               }`}
             >
               {!p.hasMonthly ? 'Coming soon' : p.trialDays > 0 ? `Start ${p.trialDays}-day trial` : 'Subscribe'}

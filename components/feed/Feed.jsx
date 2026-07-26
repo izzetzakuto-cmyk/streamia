@@ -145,7 +145,7 @@ function Composer() {
         </button>
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={onFile} />
         <button onClick={handlePost} disabled={(!content.trim() && !mediaUrl) || loading}
-          className="px-5 py-1.5 bg-accent hover:bg-accent-dk text-white text-[13px] font-bold rounded-full transition disabled:opacity-50 flex items-center gap-2">
+          className="px-5 py-1.5 bg-streamlink hover:opacity-90 text-white text-[13px] font-bold rounded-full transition disabled:opacity-50 flex items-center gap-2">
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2.5} /> : null}
           Post
         </button>
@@ -335,7 +335,7 @@ function CommentSection({ postId, me, onCountChange }) {
           placeholder="Write a comment…"
           className="flex-1 min-h-[34px] max-h-32 bg-white border border-gray-200 rounded-2xl px-3 py-1.5 text-[12.5px] outline-none focus:border-accent transition resize-none" />
         <button onClick={submit} disabled={!draft.trim() || posting}
-          className="inline-flex items-center gap-1 h-[34px] px-3 bg-accent hover:bg-accent-dk text-white text-[11.5px] font-bold rounded-full transition disabled:opacity-50 flex-shrink-0">
+          className="inline-flex items-center gap-1 h-[34px] px-3 bg-streamlink hover:opacity-90 text-white text-[11.5px] font-bold rounded-full transition disabled:opacity-50 flex-shrink-0">
           {posting ? <Loader2 className="w-3 h-3 animate-spin" strokeWidth={2.5} /> : <Send className="w-3 h-3" strokeWidth={2.5} />}
           Post
         </button>
