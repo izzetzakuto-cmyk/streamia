@@ -35,7 +35,10 @@ export default function ReviewsPage() {
     platformApi.list()
       .then((list) => {
         setPlatforms(list)
-        if (!selected && list.length > 0) setSelected(list[0].slug)
+        if (!selected && list.length > 0) {
+          const preferred = list.find((p) => p.slug === 'tiktok-live')
+          setSelected(preferred ? preferred.slug : list[0].slug)
+        }
       })
       .catch(() => setPlatforms([]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
