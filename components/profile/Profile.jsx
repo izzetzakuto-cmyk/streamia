@@ -7,7 +7,7 @@ import {
   BadgeCheck, BarChart3, Bookmark, Camera, Check, Clock, Eye, FileText, Handshake, Heart,
   Loader2, MapPin, MessageCircle, Pencil, Plus, Radio, Rocket, Users, X,
 } from 'lucide-react'
-import { connectionApi, favoritesApi, followApi, postApi, profileApi, uploadFile } from '@/lib/api-client'
+import { connectionApi, favoritesApi, followApi, platformApi, postApi, profileApi, uploadFile } from '@/lib/api-client'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 import RoleBadge from '@/components/RoleBadge'
@@ -93,6 +93,10 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
   const [cropTarget, setCropTarget] = useState(null)
   const bannerInputRef = useRef(null)
   const avatarInputRef = useRef(null)
+  // Platform catalog (slug → name + brandColor) so every selected platform
+  // renders as a badge, not just the three that used to be hardcoded.
+  const [platformCatalog, setPlatformCatalog] = useState([])
+  useEffect(() => { platformApi.list().then(setPlatformCatalog).catch(() => {}) }, [])
 
   const isOwnProfile = viewingOwn || profile?.id === myProfile?.id
   const me = useAuthStore((s) => s.user)
@@ -319,9 +323,17 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
 
           {profile.platforms?.length > 0 && (
             <div className="flex gap-2 mb-3 flex-wrap">
-              {profile.platforms.includes('twitch')  && <a href={profile.twitchUrl || '#'} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-[12px] font-bold hover:bg-purple-100 transition">Twitch</a>}
-              {profile.platforms.includes('kick')    && <a href={profile.kickUrl || '#'}   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50  text-green-700  rounded-full text-[12px] font-bold hover:bg-green-100  transition">Kick</a>}
-              {profile.platforms.includes('youtube') && <a href={profile.youtubeUrl || '#'} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50    text-red-700    rounded-full text-[12px] font-bold hover:bg-red-100    transition">YouTube</a>}
+              {profile.platforms.map((slug) => {
+                const p = platformCatalog.find((x) => x.slug === slug)
+                const label = p?.name || slug.replace(/-/g, ' ')
+                const color = p?.brandColor || '#6B7280'
+                const url = slug === 'twitch' ? profile.twitchUrl : slug === 'kick' ? profile.kickUrl : slug === 'youtube' ? profile.youtubeUrl : null
+                const cls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold capitalize transition hover:brightness-95'
+                const style = { color, backgroundColor: `${color}14` }
+                return url
+                  ? <a key={slug} href={url} target="_blank" rel="noopener noreferrer" className={cls} style={style}>{label}</a>
+                  : <span key={slug} className={cls} style={style}>{label}</span>
+              })}
             </div>
           )}
 

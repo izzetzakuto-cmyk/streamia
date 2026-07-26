@@ -97,7 +97,7 @@ export default function Page() {
       <nav aria-label="Main" className="sticky top-0 z-40 bg-paper/85 backdrop-blur border-b border-rule">
         <div className="max-w-6xl mx-auto h-16 flex items-center px-6">
           <Link href="/" aria-label="StreamLink — home" className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md">
-            <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-7 w-auto" />
+            <img src="/brand/icon.svg" alt="StreamLink" className="h-9 w-auto" />
           </Link>
           <div className="hidden md:flex items-center gap-7 ml-10 text-caption text-muted font-semibold">
             <a href="#features" className="hover:text-ink transition focus-visible:outline-none focus-visible:text-ink">Platform</a>

@@ -35,11 +35,13 @@ module.exports = {
         rule:   '#E6E4DC',
         muted:  '#585650',
         // Existing palette (do not remove — used across login/pricing/feed/etc.):
-        // Graduation purple ("saf mor") — single accent, not the logo gradient.
-        accent: '#7C3AED',
-        'accent-lt': '#EDE9FE',
-        'accent-dk': '#6D28D9',
-        // Pink-purple accent for hover states + focus rings (PDF "pembe-mor" brief).
+        // Brand pink ("StreamLink pembe") — the single UI accent for buttons,
+        // tabs, links, rings. Replaced the old graduation purple (#7C3AED) per
+        // Lara's 26.07 feedback: all clickable elements use the new colour set.
+        accent: '#E8347A',
+        'accent-lt': '#FDE7F1',
+        'accent-dk': '#C81E63',
+        // Deeper magenta for hover states + focus rings.
         'accent-pink': '#C026D3',
         // Lara brand palette (June 2026) — official SVG asset colors.
         'sl-orange': '#F4622A',

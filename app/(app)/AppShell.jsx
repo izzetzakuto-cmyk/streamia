@@ -94,9 +94,9 @@ export default function AppShell({ me, children }) {
     <>
       {/* Desktop nav */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200 h-14 hidden md:flex items-center px-4 gap-2">
-        <Link href="/feed" aria-label="StreamLink — feed" className="flex items-center flex-shrink-0 logo-3d-glow">
+        <Link href="/feed" aria-label="StreamLink — feed" className="flex items-center flex-shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/logo-wordmark.svg" alt="StreamLink" className="h-6 w-auto logo-3d" />
+          <img src="/brand/icon.svg" alt="StreamLink" className="h-9 w-auto" />
         </Link>
 
         <div className="relative flex-1 max-w-[260px] ml-2" ref={searchWrapRef}>
