@@ -17,7 +17,7 @@ export default function UpgradeCta({ plan = 'premium', className = '', children 
           plan={plan}
           title="Subscribe"
           onClose={() => setOpen(false)}
-          onSuccess={() => { window.location.href = '/settings?upgraded=true' }}
+          onSuccess={() => { window.location.href = '/profile?upgraded=true' }}
         />
       )}
     </>

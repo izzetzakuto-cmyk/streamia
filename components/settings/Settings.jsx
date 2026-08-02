@@ -512,7 +512,7 @@ function SubscriptionTab({ showToast }) {
           billing="monthly"
           title="Upgrade to Premium"
           onClose={() => setShowUpgrade(false)}
-          onSuccess={() => { setShowUpgrade(false); load() }}
+          onSuccess={() => { window.location.href = '/profile?upgraded=true' }}
         />
       )}
     </div>

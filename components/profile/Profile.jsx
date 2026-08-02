@@ -97,7 +97,24 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
   // renders as a badge, not just the three that used to be hardcoded.
   const [platformCatalog, setPlatformCatalog] = useState([])
   const [showBadgeEditor, setShowBadgeEditor] = useState(false)
+  const [showCongrats, setShowCongrats] = useState(false)
   useEffect(() => { platformApi.list().then(setPlatformCatalog).catch(() => {}) }, [])
+
+  // Post-upgrade celebration: the Stripe flow redirects here with ?upgraded=true.
+  // Show a one-time congrats card, reflect Premium immediately (in case this
+  // render loaded before the webhook flipped the flag) and strip the param so a
+  // refresh doesn't replay it.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !viewingOwn) return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('upgraded') !== 'true') return
+    setShowCongrats(true)
+    setProfile((p) => (p ? { ...p, isVerified: true } : p))
+    fetchProfile?.()
+    params.delete('upgraded')
+    const qs = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''))
+  }, [viewingOwn, fetchProfile])
 
   const isOwnProfile = viewingOwn || profile?.id === myProfile?.id
   const me = useAuthStore((s) => s.user)
@@ -301,6 +318,11 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
 
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-[20px] font-extrabold">{profile.displayName}</h1>
+            {profile.isVerified && (
+              <span title="Premium · Verified" className="inline-flex flex-shrink-0" aria-label="Premium verified member">
+                <BadgeCheck className="w-5 h-5 text-sky-500" fill="currentColor" strokeWidth={0} />
+              </span>
+            )}
             <RoleBadge role={profile.role} size="sm" />
           </div>
           <div className="flex items-center flex-wrap gap-x-1.5 text-[13px] text-gray-400 mb-2">
@@ -520,6 +542,31 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
                   </div>
                 </Link>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-upgrade congratulations */}
+      {showCongrats && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCongrats(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-violet-500 to-fuchsia-500 px-6 pt-8 pb-10 text-white">
+              <div className="text-4xl mb-2">🎉</div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-[12px] font-extrabold mb-3">
+                <BadgeCheck className="w-4 h-4" strokeWidth={2.5} /> Premium
+              </div>
+              <h2 className="text-[22px] font-extrabold leading-tight">You&apos;re Premium!</h2>
+            </div>
+            <div className="px-6 py-6">
+              <p className="text-[13.5px] text-gray-600 leading-relaxed mb-5">
+                Welcome to Streamer Premium. Your verified badge is live on your profile, and
+                every Premium perk is now unlocked. Thanks for the support! 💜
+              </p>
+              <button onClick={() => setShowCongrats(false)}
+                className="w-full h-11 btn-gradient text-white font-bold rounded-full text-sm transition">
+                View my profile
+              </button>
             </div>
           </div>
         </div>

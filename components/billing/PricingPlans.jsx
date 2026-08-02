@@ -83,7 +83,7 @@ export default function PricingPlans() {
           title="Subscribe"
           onClose={() => setUpgrade(null)}
           onSuccess={() => {
-            window.location.href = '/settings?upgraded=true'
+            window.location.href = '/profile?upgraded=true'
           }}
         />
       )}
