@@ -308,7 +308,10 @@ function CommentSection({ postId, me, onCountChange }) {
               </Link>
               <div className="flex-1 min-w-0">
                 <div className="bg-white border border-gray-100 rounded-2xl px-3 py-2">
-                  <Link href={`/profile/${c.author?.id}`} className="text-[12px] font-extrabold hover:underline">{c.author?.displayName}</Link>
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    <Link href={`/profile/${c.author?.id}`} className="text-[12px] font-extrabold hover:underline">{c.author?.displayName}</Link>
+                    {c.author?.isVerified && <PremiumBadge size={11} />}
+                  </span>
                   <p className="text-[12.5px] text-gray-700 leading-snug whitespace-pre-wrap mt-0.5">{c.content}</p>
                 </div>
                 <div className="flex items-center gap-3 mt-1 px-3">
@@ -377,7 +380,10 @@ function LikesModal({ postId, onClose }) {
                   : (p.displayName || '??').slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold truncate">{p.displayName}</div>
+                <div className="text-[13px] font-bold flex items-center gap-1 min-w-0">
+                  <span className="truncate">{p.displayName}</span>
+                  {p.isVerified && <PremiumBadge size={12} />}
+                </div>
                 <div className="text-[11px] text-gray-400">@{p.handle}</div>
               </div>
             </div>
@@ -407,7 +413,10 @@ function ProfileSidebar({ profile }) {
             ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
             : initials}
         </div>
-        <div className="font-extrabold text-[14px]">{profile.displayName}</div>
+        <div className="font-extrabold text-[14px] flex items-center justify-center gap-1">
+          <span className="truncate">{profile.displayName}</span>
+          {profile.isVerified && <PremiumBadge size={13} />}
+        </div>
         <div className="text-[11.5px] text-gray-400 mb-3">@{profile.handle}{profile.category && ` · ${profile.category}`}</div>
         <div className="flex justify-between text-center border-t border-gray-100 pt-3">
           {[['Connections', profile.connectionsCount || 0], ['Followers', profile.followersCount || 0]].map(([k, v]) => (
@@ -460,7 +469,10 @@ function LiveNowSidebar() {
                   : initials}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-bold truncate">{s.displayName}</div>
+                <div className="text-[12px] font-bold flex items-center gap-1 min-w-0">
+                  <span className="truncate">{s.displayName}</span>
+                  {s.isVerified && <PremiumBadge size={11} />}
+                </div>
                 <div className="text-[10.5px] text-gray-400 truncate">@{s.handle}{s.category ? ` · ${s.category}` : ''}</div>
               </div>
               <div className="w-1.5 h-1.5 bg-live rounded-full flex-shrink-0" />
@@ -501,8 +513,10 @@ function LiveNowStrip() {
                   ? <img src={s.avatarUrl} alt="" className="w-full h-full object-cover" />
                   : initials}
               </div>
-              <div className="text-[12px] font-extrabold truncate flex items-center justify-center gap-1">
-                <span className="w-1.5 h-1.5 bg-live rounded-full flex-shrink-0" />{s.displayName}
+              <div className="text-[12px] font-extrabold flex items-center justify-center gap-1 min-w-0">
+                <span className="w-1.5 h-1.5 bg-live rounded-full flex-shrink-0" />
+                <span className="truncate">{s.displayName}</span>
+                {s.isVerified && <PremiumBadge size={10} />}
               </div>
               <div className="text-[10.5px] text-gray-400 truncate">{s.category || '—'}</div>
             </div>
