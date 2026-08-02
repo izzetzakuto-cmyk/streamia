@@ -28,6 +28,10 @@ export default function UpgradeModal({
   subtitle,
   onClose,
   onSuccess,
+  // When provided, confirm an already-created payment (e.g. an upgrade's
+  // prorated invoice that needs 3-D Secure) instead of starting a new subscription.
+  paymentClientSecret = null,
+  paymentMode = 'payment',
 }) {
   const [phase, setPhase] = useState('loading') // loading | ready | disabled | error
   const [clientSecret, setClientSecret] = useState(null)
@@ -39,30 +43,32 @@ export default function UpgradeModal({
     let cancelled = false
     ;(async () => {
       try {
-        // Fire config + subscribe in parallel and start loading Stripe.js the
-        // moment we have the publishable key — so the card form shows up fast.
-        const cfgP = stripeApi.config()
-        const subP = stripeApi.subscribe({ plan, billing }).then(
-          (v) => ({ v }),
-          (e) => ({ e }),
-        )
-        const cfg = await cfgP
+        const cfg = await stripeApi.config()
         if (cancelled) return
         if (!cfg?.enabled || !cfg?.publishableKey) {
           setPhase('disabled')
           return
         }
-        setPk(cfg.publishableKey) // begins loadStripe() while subscribe finishes
-        const sub = await subP
+        setPk(cfg.publishableKey) // begins loadStripe()
+
+        // Confirming an existing payment (upgrade proration needing SCA): skip
+        // the subscribe call and go straight to the Payment Element.
+        if (paymentClientSecret) {
+          setClientSecret(paymentClientSecret)
+          setMode(paymentMode || 'payment')
+          setPhase('ready')
+          return
+        }
+
+        const sub = await stripeApi.subscribe({ plan, billing })
         if (cancelled) return
-        if (sub.e) throw sub.e
-        if (!sub.v?.clientSecret) {
+        if (!sub?.clientSecret) {
           setError('Could not start the payment. Please try again.')
           setPhase('error')
           return
         }
-        setClientSecret(sub.v.clientSecret)
-        setMode(sub.v.mode || 'payment')
+        setClientSecret(sub.clientSecret)
+        setMode(sub.mode || 'payment')
         setPhase('ready')
       } catch (err) {
         if (cancelled) return
@@ -81,7 +87,7 @@ export default function UpgradeModal({
     return () => {
       cancelled = true
     }
-  }, [plan, billing])
+  }, [plan, billing, paymentClientSecret, paymentMode])
 
   const stripePromise = pk ? getStripe(pk) : null
 

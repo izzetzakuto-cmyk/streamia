@@ -413,7 +413,7 @@ function ProfileSidebar({ profile }) {
             ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
             : initials}
         </div>
-        <div className="font-extrabold text-[14px] flex items-center justify-center gap-1">
+        <div className="font-extrabold text-[14px] flex items-center gap-1">
           <span className="truncate">{profile.displayName}</span>
           {profile.isVerified && <PremiumBadge size={13} />}
         </div>

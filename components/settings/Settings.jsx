@@ -420,6 +420,7 @@ function SubscriptionTab({ showToast }) {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [confirm, setConfirm] = useState(null) // { clientSecret, name } when an upgrade needs 3-D Secure
 
   const load = () => {
     setLoading(true)
@@ -481,6 +482,11 @@ function SubscriptionTab({ showToast }) {
     setBusy('change:' + target.key)
     try {
       const r = await subscriptionApi.change(target.key)
+      if (r.effect === 'action_required' && r.clientSecret) {
+        // Card needs 3-D Secure / SCA — open the confirm step.
+        setConfirm({ clientSecret: r.clientSecret, name: target.name })
+        return
+      }
       if (r.effect === 'upgraded') showToast(`Upgraded to ${target.name}.`)
       else if (r.effect === 'downgraded') showToast(`Downgrade to ${target.name} scheduled for your period end.`)
       else showToast('No change made.')
@@ -608,6 +614,16 @@ function SubscriptionTab({ showToast }) {
           title="Upgrade to Premium"
           onClose={() => setShowUpgrade(false)}
           onSuccess={() => { window.location.href = '/profile?upgraded=true' }}
+        />
+      )}
+
+      {confirm && (
+        <UpgradeModal
+          title="Confirm your upgrade"
+          subtitle={`Authorize the payment to switch to ${confirm.name}`}
+          paymentClientSecret={confirm.clientSecret}
+          onClose={() => setConfirm(null)}
+          onSuccess={() => { setConfirm(null); showToast('Upgrade complete.'); load() }}
         />
       )}
     </div>
