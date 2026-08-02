@@ -507,8 +507,13 @@ function SubscriptionTab({ showToast }) {
   const cancelling = Boolean(sub?.cancelAtPeriodEnd)
   const currentRow = plans.find((p) => p.key === plan)
   const currentAmount = currentRow?.amountMonthly ?? 0
+  // Only offer switches within the same audience (brands move Starter↔Featured;
+  // creators stay on the creator tiers) — never cross-sell a brand plan to a
+  // streamer.
+  const GROUPS = { creator: ['premium', 'pro', 'business'], brand: ['starter', 'featured'] }
+  const myGroup = GROUPS.brand.includes(plan) ? 'brand' : 'creator'
   const others = plans
-    .filter((p) => p.key !== plan && (p.amountMonthly ?? 0) > 0)
+    .filter((p) => p.key !== plan && (p.amountMonthly ?? 0) > 0 && GROUPS[myGroup].includes(p.key))
     .sort((a, b) => (a.amountMonthly ?? 0) - (b.amountMonthly ?? 0))
 
   return (
