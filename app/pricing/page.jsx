@@ -1,6 +1,10 @@
 import Link from 'next/link'
 import { ArrowRight, Award, Building2, Check, Crown, Sparkles, Zap } from 'lucide-react'
 import UpgradeCta from '@/components/billing/UpgradeCta'
+import { apiServer, getMeServer } from '@/lib/api-server'
+
+// Read cookies so the header + current-plan state reflect the signed-in user.
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Pricing',
@@ -105,18 +109,24 @@ const PLANS = [
   },
 ]
 
-function PlanCard({ plan }) {
+function PlanCard({ plan, loggedIn, currentPlan }) {
   const { id, name, Icon, iconBg, price, period, description, cardClass, badge, trialBadge, cta, ctaHref, ctaClass, features } = plan
   // Use the right glyph for cents so $9.99 doesn't look like $9.
   const [whole, cents] = String(price).split('.')
+  const isCurrent = loggedIn && currentPlan === id
+  const ctaCls = `mt-5 inline-flex items-center justify-center w-full h-[52px] rounded-xl text-[15px] font-bold tracking-wide font-display transition ${ctaClass}`
 
   return (
     <div className={`relative bg-white border rounded-2xl p-7 ${cardClass}`}>
-      {badge && (
+      {isCurrent ? (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white text-[10.5px] font-extrabold uppercase tracking-wider rounded-full shadow-sm">
+          <Check className="w-3 h-3" strokeWidth={3} /> Your plan
+        </div>
+      ) : badge ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-accent text-white text-[10.5px] font-extrabold uppercase tracking-wider rounded-full shadow-sm">
           {badge}
         </div>
-      )}
+      ) : null}
       <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl ${iconBg}`}>
         <Icon className="w-5 h-5" strokeWidth={2.25} />
       </div>
@@ -134,14 +144,18 @@ function PlanCard({ plan }) {
           <Check className="w-3 h-3" strokeWidth={3} /> {trialBadge}
         </div>
       )}
-      {price > 0 ? (
-        <UpgradeCta plan={id} className={`mt-5 inline-flex items-center justify-center w-full h-[52px] rounded-xl text-[15px] font-bold tracking-wide font-display transition ${ctaClass}`}>
-          {cta}
-        </UpgradeCta>
-      ) : (
-        <Link href={ctaHref} className={`mt-5 inline-flex items-center justify-center w-full h-[52px] rounded-xl text-[15px] font-bold tracking-wide font-display transition ${ctaClass}`}>
-          {cta}
+      {isCurrent ? (
+        <div className={`${ctaCls} border border-emerald-300 bg-emerald-50 text-emerald-700 cursor-default`}>
+          <Check className="w-4 h-4 mr-1.5" strokeWidth={3} /> Your current plan
+        </div>
+      ) : loggedIn ? (
+        <Link href="/settings?tab=billing" className={ctaCls}>
+          {price > 0 ? cta : 'Manage plan'}
         </Link>
+      ) : price > 0 ? (
+        <UpgradeCta plan={id} className={ctaCls}>{cta}</UpgradeCta>
+      ) : (
+        <Link href={ctaHref} className={ctaCls}>{cta}</Link>
       )}
       <ul className="mt-6 space-y-2.5">
         {features.map((f) => (
@@ -155,23 +169,43 @@ function PlanCard({ plan }) {
   )
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
   const creatorPlans = PLANS.filter((p) => p.audience === 'creator')
   const brandPlans = PLANS.filter((p) => p.audience === 'brand')
+
+  const me = await getMeServer().catch(() => null)
+  const loggedIn = Boolean(me)
+  let currentPlan = null
+  if (loggedIn) {
+    const sub = await apiServer.get('/api/subscriptions/me').catch(() => null)
+    // 'basic' is the free tier's card id, so free users still see "Your plan".
+    currentPlan = sub?.plan && sub.plan !== 'free' ? sub.plan : 'basic'
+  }
 
   return (
     <main className="min-h-screen bg-white">
       <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto h-16 flex items-center px-6">
-          <Link href="/" className="flex items-center">
+          <Link href={loggedIn ? '/feed' : '/'} className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/icon.svg" alt="StreamLink" className="h-9 w-auto" />
           </Link>
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/login" className="px-3 py-1.5 text-[13.5px] font-semibold text-gray-600 hover:text-gray-900 transition">Sign in</Link>
-            <Link href="/register" className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-full transition">
-              Get started <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
-            </Link>
+            {loggedIn ? (
+              <>
+                <Link href="/settings?tab=billing" className="px-3 py-1.5 text-[13.5px] font-semibold text-gray-600 hover:text-gray-900 transition">Manage plan</Link>
+                <Link href="/feed" className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-full transition">
+                  Go to app <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="px-3 py-1.5 text-[13.5px] font-semibold text-gray-600 hover:text-gray-900 transition">Sign in</Link>
+                <Link href="/register" className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-full transition">
+                  Get started <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -198,7 +232,7 @@ export default function PricingPage() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
         <div className="grid md:grid-cols-2 gap-4">
-          {creatorPlans.map((p) => <PlanCard key={p.id} plan={p} />)}
+          {creatorPlans.map((p) => <PlanCard key={p.id} plan={p} loggedIn={loggedIn} currentPlan={currentPlan} />)}
         </div>
       </section>
 
@@ -209,7 +243,7 @@ export default function PricingPage() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
         <div className="grid md:grid-cols-2 gap-4">
-          {brandPlans.map((p) => <PlanCard key={p.id} plan={p} />)}
+          {brandPlans.map((p) => <PlanCard key={p.id} plan={p} loggedIn={loggedIn} currentPlan={currentPlan} />)}
         </div>
         <p className="text-[12px] text-gray-400 mt-4 max-w-3xl">
           Free brand accounts can DM up to 10 distinct creators per month. Paid brand plans remove the cap and unlock featured placement.

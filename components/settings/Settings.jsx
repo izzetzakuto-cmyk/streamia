@@ -1,8 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from '@/lib/router-shim'
 import { CreditCard, ExternalLink, Key, Loader2, Mail, Settings as SettingsIcon, Trash2, User } from 'lucide-react'
-import { authApi, profileApi, stripeApi, subscriptionApi } from '@/lib/api-client'
+import { authApi, planApi, profileApi, stripeApi, subscriptionApi } from '@/lib/api-client'
 import UpgradeModal from '@/components/billing/UpgradeModal'
 import { useAppStore, useAuthStore } from '@/lib/store'
 import ImageUpload from '@/components/ImageUpload'
@@ -412,17 +412,22 @@ function PrivacyTab({ showToast, signOut, navigate }) {
 }
 
 // ── UI primitives ──
+const money = (cents) => `$${((cents ?? 0) / 100).toFixed((cents ?? 0) % 100 === 0 ? 0 : 2)}`
+
 function SubscriptionTab({ showToast }) {
   const [sub, setSub] = useState(null)
+  const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
 
   const load = () => {
     setLoading(true)
-    subscriptionApi
-      .me()
-      .then(setSub)
+    Promise.all([subscriptionApi.me(), planApi.list().catch(() => [])])
+      .then(([s, p]) => {
+        setSub(s)
+        setPlans(Array.isArray(p) ? p : p?.items ?? [])
+      })
       .catch((e) => showToast(e.message || 'Could not load subscription', 'error'))
       .finally(() => setLoading(false))
   }
@@ -455,6 +460,38 @@ function SubscriptionTab({ showToast }) {
     }
   }
 
+  const resume = async () => {
+    setBusy('resume')
+    try {
+      await subscriptionApi.resume()
+      showToast('Your subscription will continue.')
+      load()
+    } catch (e) {
+      showToast(e.message || 'Could not resume', 'error')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const change = async (target, isUpgrade) => {
+    const msg = isUpgrade
+      ? `Upgrade to ${target.name} now? You'll be charged the prorated difference immediately.`
+      : `Downgrade to ${target.name}? It takes effect at the end of your current period — you keep your current plan until then.`
+    if (!window.confirm(msg)) return
+    setBusy('change:' + target.key)
+    try {
+      const r = await subscriptionApi.change(target.key)
+      if (r.effect === 'upgraded') showToast(`Upgraded to ${target.name}.`)
+      else if (r.effect === 'downgraded') showToast(`Downgrade to ${target.name} scheduled for your period end.`)
+      else showToast('No change made.')
+      load()
+    } catch (e) {
+      showToast(e.message || 'Could not change plan', 'error')
+    } finally {
+      setBusy('')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -466,22 +503,73 @@ function SubscriptionTab({ showToast }) {
   const plan = sub?.plan ?? 'free'
   const isPaid = plan !== 'free'
   const periodEnd = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null
+  const pendingAt = sub?.pendingPlanAt ? new Date(sub.pendingPlanAt) : null
+  const cancelling = Boolean(sub?.cancelAtPeriodEnd)
+  const currentRow = plans.find((p) => p.key === plan)
+  const currentAmount = currentRow?.amountMonthly ?? 0
+  const others = plans
+    .filter((p) => p.key !== plan && (p.amountMonthly ?? 0) > 0)
+    .sort((a, b) => (a.amountMonthly ?? 0) - (b.amountMonthly ?? 0))
 
   return (
     <div className="space-y-4">
       <Card title="Your plan" hint="Manage your subscription and billing.">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-[15px] font-extrabold capitalize">{isPaid ? plan : 'Free plan'}</div>
+            <div className="text-[15px] font-extrabold">{isPaid ? currentRow?.name || plan : 'Free plan'}</div>
             <div className="text-[12.5px] text-gray-400 mt-0.5">
               {isPaid
-                ? `Status: ${sub?.status ?? '—'}${periodEnd ? ` · renews ${periodEnd.toLocaleDateString()}` : ''}`
+                ? `Status: ${sub?.status ?? '—'}${periodEnd ? ` · ${cancelling ? 'ends' : 'renews'} ${periodEnd.toLocaleDateString()}` : ''}`
                 : 'You are on the free plan.'}
             </div>
           </div>
           {!isPaid && <PrimaryButton onClick={() => setShowUpgrade(true)}>Upgrade</PrimaryButton>}
         </div>
+
+        {sub?.pendingPlan && (
+          <div className="mt-3 text-[12.5px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            Scheduled: switches to <span className="font-extrabold">{plans.find((p) => p.key === sub.pendingPlan)?.name || sub.pendingPlan}</span>
+            {pendingAt ? ` on ${pendingAt.toLocaleDateString()}` : ''}.
+          </div>
+        )}
+        {cancelling && (
+          <div className="mt-3 flex items-center justify-between gap-3 text-[12.5px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <span>Cancels at the period end{periodEnd ? ` (${periodEnd.toLocaleDateString()})` : ''}.</span>
+            <button onClick={resume} disabled={busy === 'resume'} className="font-extrabold text-accent hover:underline disabled:opacity-60">
+              Keep plan
+            </button>
+          </div>
+        )}
       </Card>
+
+      {isPaid && others.length > 0 && (
+        <Card title="Change plan" hint="Upgrade now (prorated) or downgrade from next period.">
+          <div className="space-y-2">
+            {others.map((p) => {
+              const isUpgrade = (p.amountMonthly ?? 0) >= currentAmount
+              const busyThis = busy === 'change:' + p.key
+              return (
+                <div key={p.key} className="flex items-center justify-between gap-3 border border-gray-200 rounded-xl px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="text-[13.5px] font-extrabold">{p.name}</div>
+                    <div className="text-[12px] text-gray-400">{money(p.amountMonthly)} / mo</div>
+                  </div>
+                  <button
+                    onClick={() => change(p, isUpgrade)}
+                    disabled={Boolean(busy)}
+                    className={`inline-flex items-center gap-2 h-9 px-4 rounded-lg text-[12.5px] font-bold transition disabled:opacity-60 ${
+                      isUpgrade ? 'btn-gradient text-white' : 'border border-gray-300 text-gray-700 hover:border-gray-500'
+                    }`}
+                  >
+                    {busyThis ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isUpgrade ? 'Upgrade' : 'Downgrade'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
 
       {isPaid && (
         <Card title="Billing" hint="Update your card, view invoices, or cancel.">
@@ -494,14 +582,16 @@ function SubscriptionTab({ showToast }) {
               {busy === 'portal' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
               Manage billing
             </button>
-            <button
-              onClick={cancel}
-              disabled={busy === 'cancel'}
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-red-200 text-[13px] font-bold text-red-600 hover:border-red-400 disabled:opacity-60"
-            >
-              {busy === 'cancel' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Cancel subscription
-            </button>
+            {!cancelling && (
+              <button
+                onClick={cancel}
+                disabled={busy === 'cancel'}
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-red-200 text-[13px] font-bold text-red-600 hover:border-red-400 disabled:opacity-60"
+              >
+                {busy === 'cancel' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Cancel subscription
+              </button>
+            )}
           </div>
         </Card>
       )}
