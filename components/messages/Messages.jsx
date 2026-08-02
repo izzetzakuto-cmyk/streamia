@@ -5,6 +5,7 @@ import { Link } from '@/lib/router-shim'
 import { AlertTriangle, Crown } from 'lucide-react'
 import { messageApi, profileApi, subscriptionApi } from '@/lib/api-client'
 import UpgradeModal from '@/components/billing/UpgradeModal'
+import PremiumBadge from '@/components/PremiumBadge'
 import { getSocket } from '@/lib/socket'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
@@ -210,7 +211,10 @@ export default function MessagesPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <span className={`text-[13px] truncate ${convo.unreadCount > 0 ? 'font-extrabold' : 'font-semibold'}`}>{convo.partner.displayName}</span>
+                      <span className="flex items-center gap-1 min-w-0">
+                        <span className={`text-[13px] truncate ${convo.unreadCount > 0 ? 'font-extrabold' : 'font-semibold'}`}>{convo.partner.displayName}</span>
+                        {convo.partner.isVerified && <PremiumBadge size={12} />}
+                      </span>
                       <span className="text-[10px] text-gray-400 flex-shrink-0 ml-1">{convo.lastMessage?.createdAt ? formatDistanceToNow(new Date(convo.lastMessage.createdAt)) : ''}</span>
                     </div>
                     <div className={`text-[11.5px] truncate ${convo.unreadCount > 0 ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>{convo.lastMessage?.content}</div>
@@ -227,7 +231,10 @@ export default function MessagesPage() {
             <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100">
               <div className="w-9 h-9 rounded-full bg-graduate-radial flex items-center justify-center text-white font-bold text-sm">{initials(activeConvo.partner.displayName)}</div>
               <div>
-                <div className="text-[14px] font-extrabold">{activeConvo.partner.displayName}</div>
+                <div className="text-[14px] font-extrabold flex items-center gap-1">
+                  <span className="truncate">{activeConvo.partner.displayName}</span>
+                  {activeConvo.partner.isVerified && <PremiumBadge size={13} />}
+                </div>
                 <div className="text-[11px] text-gray-400">@{activeConvo.partner.handle} {activeConvo.partner.isLive && <span className="text-live font-bold ml-1">● LIVE</span>}</div>
               </div>
             </div>

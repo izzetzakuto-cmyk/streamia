@@ -1,9 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Link } from '@/lib/router-shim'
-import { BadgeCheck, Crown, Eye, EyeOff, Loader2, Lock } from 'lucide-react'
+import { Crown, Eye, EyeOff, Loader2, Lock } from 'lucide-react'
 import { profileViewApi } from '@/lib/api-client'
 import UpgradeModal from '@/components/billing/UpgradeModal'
+import PremiumBadge from '@/components/PremiumBadge'
 import { useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -123,7 +124,7 @@ export default function ProfileViewsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[13.5px] font-extrabold truncate">{row.viewer.displayName}</span>
-                        {row.viewer.isVerified && <BadgeCheck className="w-4 h-4 text-sky-500 flex-shrink-0" fill="currentColor" strokeWidth={0} />}
+                        {row.viewer.isVerified && <PremiumBadge size={13} />}
                       </div>
                       <div className="text-[11.5px] text-gray-400 truncate">@{row.viewer.handle}{row.viewer.category ? ` · ${row.viewer.category}` : ''}</div>
                     </div>

@@ -4,13 +4,14 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import {
-  BadgeCheck, BarChart3, Bookmark, Camera, Check, Clock, Eye, FileText, Handshake, Heart,
+  BarChart3, Bookmark, Camera, Check, Clock, Eye, FileText, Handshake, Heart,
   Loader2, MapPin, MessageCircle, Pencil, Plus, Radio, Rocket, Users, X,
 } from 'lucide-react'
 import { connectionApi, favoritesApi, followApi, platformApi, postApi, profileApi, uploadFile } from '@/lib/api-client'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { formatDistanceToNow } from 'date-fns'
 import RoleBadge from '@/components/RoleBadge'
+import PremiumBadge from '@/components/PremiumBadge'
 
 const ImageCropModal = dynamic(() => import('@/components/ImageCropModal'), { ssr: false })
 
@@ -318,11 +319,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
 
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-[20px] font-extrabold">{profile.displayName}</h1>
-            {profile.isVerified && (
-              <span title="Premium · Verified" className="inline-flex flex-shrink-0" aria-label="Premium verified member">
-                <BadgeCheck className="w-5 h-5 text-sky-500" fill="currentColor" strokeWidth={0} />
-              </span>
-            )}
+            {profile.isVerified && <PremiumBadge size={18} />}
             <RoleBadge role={profile.role} size="sm" />
           </div>
           <div className="flex items-center flex-wrap gap-x-1.5 text-[13px] text-gray-400 mb-2">
@@ -535,7 +532,7 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[13.5px] font-extrabold truncate">{p.displayName}</span>
-                      {p.isVerified && <BadgeCheck className="w-4 h-4 text-sky-500 flex-shrink-0" fill="currentColor" strokeWidth={0} />}
+                      {p.isVerified && <PremiumBadge size={13} />}
                       {p.isLive && <span className="text-[9.5px] bg-live text-white font-black px-1.5 py-0.5 rounded-full">LIVE</span>}
                     </div>
                     <div className="text-[11.5px] text-gray-400 truncate">@{p.handle}{p.category ? ` · ${p.category}` : ''}</div>
@@ -551,17 +548,17 @@ export default function Profile({ initialProfile, initialPosts = [], viewingOwn 
       {showCongrats && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCongrats(false)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-br from-violet-500 to-fuchsia-500 px-6 pt-8 pb-10 text-white">
+            <div className="px-6 pt-8 pb-10 text-white" style={{ background: 'linear-gradient(135deg, #F6A621 0%, #FB523C 100%)' }}>
               <div className="text-4xl mb-2">🎉</div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-[12px] font-extrabold mb-3">
-                <BadgeCheck className="w-4 h-4" strokeWidth={2.5} /> Premium
+                <PremiumBadge size={14} /> Premium
               </div>
               <h2 className="text-[22px] font-extrabold leading-tight">You&apos;re Premium!</h2>
             </div>
             <div className="px-6 py-6">
               <p className="text-[13.5px] text-gray-600 leading-relaxed mb-5">
-                Welcome to Streamer Premium. Your verified badge is live on your profile, and
-                every Premium perk is now unlocked. Thanks for the support! 💜
+                Welcome to Streamer Premium. Your badge is live on your profile, and every
+                Premium perk is now unlocked. Thanks for the support! 🧡
               </p>
               <button onClick={() => setShowCongrats(false)}
                 className="w-full h-11 btn-gradient text-white font-bold rounded-full text-sm transition">

@@ -1,5 +1,6 @@
 'use client'
 import { SkeletonProfile } from '@/components/Skeleton'
+import PremiumBadge from '@/components/PremiumBadge'
 import { useEffect, useState } from 'react'
 import { connectionApi, followApi, profileApi } from '@/lib/api-client'
 import { useAuthStore, useAppStore } from '@/lib/store'
@@ -131,7 +132,10 @@ export default function Network() {
                         <div className={`w-12 h-12 rounded-full ${gradientClass(gradients[i % gradients.length])} flex items-center justify-center text-white font-extrabold -mt-6 border-[3px] border-white mb-2`}>
                           {initials(p.displayName)}
                         </div>
-                        <div className="font-bold text-[13.5px]">{p.displayName}</div>
+                        <div className="font-bold text-[13.5px] flex items-center gap-1">
+                          <span className="truncate">{p.displayName}</span>
+                          {p.isVerified && <PremiumBadge size={13} />}
+                        </div>
                         <div className="text-[11px] text-gray-400 mb-1">@{p.handle}</div>
                         {p.category && <div className="text-[11px] text-gray-500 mb-3">{p.category}</div>}
                         {p.platforms?.length > 0 && (
@@ -170,7 +174,10 @@ export default function Network() {
                         {initials(req.otherUser?.displayName)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-[14px]">{req.otherUser?.displayName}</div>
+                        <div className="font-bold text-[14px] flex items-center gap-1">
+                          <span className="truncate">{req.otherUser?.displayName}</span>
+                          {req.otherUser?.isVerified && <PremiumBadge size={13} />}
+                        </div>
                         <div className="text-[11.5px] text-gray-400">@{req.otherUser?.handle}{req.otherUser?.category ? ` · ${req.otherUser.category}` : ''}</div>
                         {req.otherUser?.bio && <div className="text-[12px] text-gray-500 mt-1 line-clamp-1">{req.otherUser.bio}</div>}
                       </div>
@@ -204,7 +211,10 @@ export default function Network() {
                           {initials(partner.displayName)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-[13px]">{partner.displayName}</div>
+                          <div className="font-bold text-[13px] flex items-center gap-1">
+                            <span className="truncate">{partner.displayName}</span>
+                            {partner.isVerified && <PremiumBadge size={12} />}
+                          </div>
                           <div className="text-[11px] text-gray-400">@{partner.handle}</div>
                         </div>
                         <button className="text-[12px] font-bold text-gray-400 hover:text-accent border border-gray-200 rounded-full px-3 py-1 hover:border-accent transition">
@@ -235,7 +245,10 @@ export default function Network() {
                         {f.isLive && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-live rounded-full border-2 border-white" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-[13px]">{f.displayName}</div>
+                        <div className="font-bold text-[13px] flex items-center gap-1">
+                          <span className="truncate">{f.displayName}</span>
+                          {f.isVerified && <PremiumBadge size={12} />}
+                        </div>
                         <div className="text-[11px] text-gray-400">@{f.handle}</div>
                       </div>
                       <button onClick={() => unfollow(f.id)} className="text-[11px] font-bold text-gray-400 hover:text-red-500 border border-gray-200 rounded-full px-3 py-1 transition">Unfollow</button>

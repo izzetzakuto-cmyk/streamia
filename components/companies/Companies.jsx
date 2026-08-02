@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { BadgeCheck, Building2, Check, ExternalLink, Loader2, Pencil, Plus, Search, Star, Users, X } from 'lucide-react'
+import PremiumBadge from '@/components/PremiumBadge'
 import { companyApi, reviewApi } from '@/lib/api-client'
 import { useAppStore, useAuthStore } from '@/lib/store'
 import StarRating from '@/components/StarRating'
@@ -371,7 +372,7 @@ export default function CompaniesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-bold flex items-center gap-1">
                       <span className="truncate">{c.name}</span>
-                      {c.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-sky-500 flex-shrink-0" fill="currentColor" strokeWidth={0} />}
+                      {c.isVerified && <PremiumBadge size={13} />}
                       {c.isFeatured && (
                         <span className="inline-flex items-center text-[9px] font-extrabold text-amber-700 uppercase tracking-wider bg-graduate-radial px-1.5 py-px rounded-full flex-shrink-0 shadow-sm">★</span>
                       )}

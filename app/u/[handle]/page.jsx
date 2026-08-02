@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowRight, BadgeCheck, Eye, MapPin, Users } from 'lucide-react'
+import { ArrowRight, Eye, MapPin, Users } from 'lucide-react'
 import { apiServer } from '@/lib/api-server'
 import RoleBadge from '@/components/RoleBadge'
+import PremiumBadge from '@/components/PremiumBadge'
 
 // 2-minute ISR — public profiles are read-heavy; this keeps avatar/banner
 // edits visible within a couple of minutes while still serving from the
@@ -95,7 +96,7 @@ export default async function PublicProfilePage({ params }) {
             </div>
             <h1 className="text-[22px] font-extrabold inline-flex items-center gap-2 flex-wrap">
               {profile.displayName}
-              {profile.isVerified && <BadgeCheck className="w-5 h-5 text-sky-500" fill="currentColor" strokeWidth={0} />}
+              {profile.isVerified && <PremiumBadge size={16} />}
               {profile.isLive && <span className="text-[10px] bg-rose-500 text-white font-black px-2 py-0.5 rounded-full">LIVE</span>}
               <RoleBadge role={profile.role} size="sm" />
             </h1>

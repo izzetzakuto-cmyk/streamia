@@ -10,6 +10,7 @@ import { profileApi } from '@/lib/api-client'
 import { useAuthStore } from '@/lib/store'
 import Toast from '@/components/Toast'
 import NotificationBell from '@/components/NotificationBell'
+import PremiumBadge from '@/components/PremiumBadge'
 
 const NAV = [
   { href: '/feed',        Icon: Home,          label: 'Home' },
@@ -139,7 +140,10 @@ export default function AppShell({ me, children }) {
                         : initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[12.5px] font-extrabold truncate">{p.displayName}</div>
+                      <div className="text-[12.5px] font-extrabold flex items-center gap-1 min-w-0">
+                        <span className="truncate">{p.displayName}</span>
+                        {p.isVerified && <PremiumBadge size={12} />}
+                      </div>
                       <div className="text-[10.5px] text-gray-400 truncate">@{p.handle}{p.category ? ` · ${p.category}` : ''}</div>
                     </div>
                   </Link>
@@ -180,7 +184,10 @@ export default function AppShell({ me, children }) {
             {showMenu && (
               <div className="absolute right-0 top-11 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-100">
-                  <div className="text-[13.5px] font-extrabold truncate">{profile?.displayName || me?.email}</div>
+                  <div className="text-[13.5px] font-extrabold flex items-center gap-1 min-w-0">
+                    <span className="truncate">{profile?.displayName || me?.email}</span>
+                    {profile?.isVerified && <PremiumBadge size={13} />}
+                  </div>
                   <div className="text-[11px] text-gray-400 truncate">@{profile?.handle ?? '—'}</div>
                 </div>
                 <MenuItem Icon={User} onClick={() => { router.push('/profile'); setShowMenu(false) }}>My Profile</MenuItem>
@@ -265,7 +272,10 @@ export default function AppShell({ me, children }) {
                           : ini}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[12.5px] font-extrabold truncate">{p.displayName}</div>
+                        <div className="text-[12.5px] font-extrabold flex items-center gap-1 min-w-0">
+                        <span className="truncate">{p.displayName}</span>
+                        {p.isVerified && <PremiumBadge size={12} />}
+                      </div>
                         <div className="text-[10.5px] text-gray-400 truncate">@{p.handle}{p.category ? ` · ${p.category}` : ''}</div>
                       </div>
                     </Link>
@@ -290,7 +300,10 @@ export default function AppShell({ me, children }) {
                   : initials}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-extrabold truncate">{profile?.displayName || me?.email}</div>
+                <div className="text-[14px] font-extrabold flex items-center gap-1 min-w-0">
+                  <span className="truncate">{profile?.displayName || me?.email}</span>
+                  {profile?.isVerified && <PremiumBadge size={13} />}
+                </div>
                 <div className="text-[11.5px] text-gray-400 truncate">@{profile?.handle ?? '—'}</div>
               </div>
               <button onClick={() => setShowDrawer(false)} aria-label="Close" className="text-gray-400 hover:text-gray-700">

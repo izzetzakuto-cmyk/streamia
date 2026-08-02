@@ -8,6 +8,7 @@ import {
 import { postApi, profileApi, uploadFile } from '@/lib/api-client'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { getSocket } from '@/lib/socket'
+import PremiumBadge from '@/components/PremiumBadge'
 import { formatDistanceToNow } from 'date-fns'
 import { SkeletonPost, SkeletonProfile } from '@/components/Skeleton'
 
@@ -203,6 +204,7 @@ function PostCard({ post }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <Link href={`/profile/${post.author?.id}`} className="text-[13.5px] font-bold hover:underline">{post.author?.displayName || 'Unknown'}</Link>
+            {post.author?.isVerified && <PremiumBadge size={13} />}
             {post.author?.isLive && <span className="text-[9.5px] bg-live text-white font-black px-1.5 py-0.5 rounded-full">LIVE</span>}
           </div>
           <div className="flex items-center gap-2 mt-0.5">

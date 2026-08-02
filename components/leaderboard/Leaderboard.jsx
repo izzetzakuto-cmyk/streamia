@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from '@/lib/router-shim'
-import { BadgeCheck, Crown, Medal, Trophy } from 'lucide-react'
+import { Crown, Medal, Trophy } from 'lucide-react'
 import { leaderboardApi, platformApi } from '@/lib/api-client'
+import PremiumBadge from '@/components/PremiumBadge'
 import { useAppStore } from '@/lib/store'
 
 function formatPeriodLabel(period, periodStart) {
@@ -120,7 +121,7 @@ export default function LeaderboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[14px] font-extrabold truncate">{entry.profile.displayName}</span>
-                      {entry.profile.isVerified && <BadgeCheck className="w-4 h-4 text-sky-500 flex-shrink-0" fill="currentColor" strokeWidth={0} />}
+                      {entry.profile.isVerified && <PremiumBadge size={13} />}
                       {entry.profile.isLive && <span className="text-[9.5px] bg-live text-white font-black px-1.5 py-0.5 rounded-full">LIVE</span>}
                     </div>
                     <div className="text-[11.5px] text-gray-400 truncate">@{entry.profile.handle}{entry.profile.category ? ` · ${entry.profile.category}` : ''}</div>
